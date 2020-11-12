@@ -30,10 +30,175 @@
 // show text, flag control if highlight
 void show_text(char *text[], int flag)
 {
-    // show line number
-    for (int i = 0; i < MAX_LINE_NUMBER && text[i] != NULL; i++)
+    // no highlight
+    if (!flag)
     {
-        printf(1, "\e[1;30m%d%d%d\e[0;32m| \e[0m%s\n", (i + 1) / 100, (i + 1) % 100 / 10, (i + 1) % 10, text[i]);
+        for (int i = 0; i < MAX_LINE_NUMBER && text[i] != NULL; i++)
+        {
+            printf(1, "\e[1;30m%d%d%d\e[0;32m| \e[0m%s\n", (i + 1) / 100, (i + 1) % 100 / 10, (i + 1) % 10, text[i]);
+        }
+    }
+
+    // highlight
+    else
+    {
+        for (int i = 0; i < MAX_LINE_NUMBER && text[i] != NULL; i++)
+        {
+            printf(1, "\e[1;30m%d%d%d\e[0;32m| \e[0m", (i + 1) / 100, (i + 1) % 100 / 10, (i + 1) % 10);
+
+            int pos = 0;
+            for (; text[i][pos] != ' ' && text[i][pos] != '\0'; pos++)
+                ;
+
+            int base = 0;
+            int len = strlen(text[i]);
+
+            // annotation
+            if (text[i][0] == '/' && text[i][1] == '/')
+            {
+                printf(1, "\e[1;30m%s\n\e[0m", text[i]);
+                continue;
+            }
+
+            while (text[i][base] != '\0')
+            {
+                // int
+                if ((len - base) >= 3 && text[i][base] == 'i' && text[i][base + 1] == 'n' && text[i][base + 2] == 't')
+                {
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 2]);
+                    base += 3;
+                }
+
+                // long 
+                else if ((len - base) >= 4 && text[i][base] == 'l' && text[i][base + 1] == 'o' && text[i][base + 2] == 'n' && text[i][base+3]=='g')
+                {
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 2]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 3]);
+                    base += 4;
+                }                
+
+                // double
+                else if ((len - base) >= 6 && text[i][base] == 'd' && text[i][base + 1] == 'o' && text[i][base + 2] == 'u' && text[i][base + 3] == 'b' && text[i][base + 4] == 'l' && text[i][base + 5] == 'e')
+                {
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 2]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 3]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 4]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 5]);
+                    base += 6;
+                }
+
+                // float
+                else if ((len - base) >= 5 && text[i][base] == 'f' && text[i][base + 1] == 'l' && text[i][base + 2] == 'o' && text[i][base + 3] == 'a' && text[i][base + 4] == 't')
+                {
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 2]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 3]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 4]);
+                    base += 5;
+                }
+
+                // numbers
+                else if (text[i][base] >= '0' || text[i][base] <= '9')
+                {
+                    printf(1, "\e[1;36m%c\e[0m", text[i][base]);
+                    base += 1;
+                }
+
+
+
+                // char
+                else if ((len - base) >= 4 && text[i][base] == 'c' && text[i][base + 1] == 'h' && text[i][base + 2] == 'a' && text[i][base + 3] == 'r')
+                {
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 2]);
+                    printf(1, "\e[1;32m%c\e[0m", text[i][base + 3]);
+                    base += 4;
+                }
+                
+                // if
+                else if ((len - base) >= 2 && text[i][base] == 'i' && text[i][base + 1] == 'f')
+                {
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 1]);
+                    base += 2;
+                }
+                
+                // else
+                else if ((len - base) >= 4 && text[i][base] == 'e' && text[i][base + 1] == 'l' && text[i][base + 2] == 's' && text[i][base + 3] == 'e')
+                {
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 2]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 3]);
+                    base += 4;
+                }
+
+                // else if
+                else if ((len - base) >= 7 && text[i][base] == 'e' && text[i][base + 1] == 'l' && text[i][base + 2] == 's' && text[i][base + 3] == 'e' && text[i][base + 4] == ' ' && text[i][base + 5] == 'i' && text[i][base + 6] == 'f')
+                {
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 1]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 2]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 3]);
+                    printf(1, "%c", text[i][base+4]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 5]);
+                    printf(1, "\e[1;33m%c\e[0m", text[i][base + 6]);
+                    base+=7;
+                }
+
+                // for
+                else if((len-base)>=3 && text[i][base]=='f' && text[i][base+1]=='o' && text[i][base+2]=='r'){
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base]);
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base+1]);
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base+2]);
+                    base+=3;
+                }  
+
+                // while
+                else if((len-base)>=5 && text[i][base]=='w' && text[i][base+1]=='h' && text[i][base+2]=='i' && text[i][base+3]=='l' && text[i][base+4]=='e'){
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base]);
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base+1]);
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base+2]);
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base+3]);
+                    printf(1,"\e[1;34m%c\e[0m",text[i][base+4]);
+                    base+=5;
+                }
+
+                // static
+                else if((len-base)>=6 && text[i][base]=='s' && text[i][base+1]=='t' && text[i][base+2]=='a' && text[i][base+3]=='t' && text[i][base+4]=='i' && text[i][base+5]=='c')
+                {
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+1]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+2]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+3]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+4]);
+                    base+=6;
+                }
+
+                // const
+                else if((len-base)>=5 && text[i][base]=='c' && text[i][base+1]=='o' && text[i][base+2]=='n' && text[i][base+3]=='s' && text[i][base+4]=='t')
+                {
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+1]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+2]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+3]);
+                    printf(1,"\e[1;33m%c\e[0m",text[i][base+4]);
+                    base+=5;
+                }
+
+                
+                
+            }
+            printf(1, "\n");
+        }
     }
 }
 
