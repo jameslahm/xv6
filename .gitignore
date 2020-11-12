@@ -40,5 +40,5 @@ usertests.sym
 wc.sym
 xv6.img
 zombie.sym
-vim.sym
-_vim
+_editor
+editor.sym
