@@ -390,11 +390,12 @@ void handle_help()
     printf(1, "\e[1;32mdel:\e[0m 	| delete the last line\n");
     printf(1, "\e[1;32mshow:\e[0m 	| enable show current contents after executing a command.\n");
     printf(1, "\e[1;32mhide:\e[0m 	| disable show current contents after executing a command.\n");
+    printf(1, "\e[1;32mhighlight:\e[0m 	| enable highlight text.\n");
+    printf(1, "\e[1;32mhighlight:\e[0m 	| disable highlight text.\n");
     printf(1, "\e[1;32msave:\e[0m 	| save the file\n");
     printf(1, "\e[1;32mexit:\e[0m 	| exit editor\n");
     printf(1, "\e[1;32mhelp:\e[0m	| help info\n");
-    printf(1, "\e[1;32mdisp:\e[0m	| display with highlighting\n");
-    printf(1, "\e[1;32mrb:\e[0m	| rollback the file\n");
+    printf(1, "\e[1;32mrollback:\e[0m	| rollback the file\n");
     printf(1, "--------+--------------------------------------------------------------\n");
 }
 
@@ -453,6 +454,11 @@ int main(int argc, char *argv[])
     // read file into text buf
     char *filename = argv[1];
 
+    // if auto show text after change
+    int auto_show = 1;
+
+    int highlight_flag =1;
+
     char *text[MAX_LINE_NUMBER] = {0};
     // total lines
     int line_number = 0;
@@ -502,7 +508,7 @@ int main(int argc, char *argv[])
 
     line_number = get_line_number(text);
 
-    show_text(text, 1);
+    show_text(text, highlight_flag);
     while (1)
     {
         char buf[BUF_SIZE] = {0};
@@ -536,7 +542,8 @@ int main(int argc, char *argv[])
                 handle_ins(text, line_number, buf + pos + 1);
             }
             line_number = get_line_number(text);
-            show_text(text, 1);
+            if (auto_show)
+                show_text(text, highlight_flag);
         }
         else if (buf[0] == 'm' && buf[1] == 'o' && buf[2] == 'd')
         {
@@ -558,7 +565,8 @@ int main(int argc, char *argv[])
                 handle_mod(text, line_number - 1, buf + pos + 1);
             }
             line_number = get_line_number(text);
-            show_text(text, 1);
+            if (auto_show)
+                show_text(text, highlight_flag);
         }
         else if (buf[0] == 'd' && buf[1] == 'e' && buf[2] == 'l')
         {
@@ -580,7 +588,8 @@ int main(int argc, char *argv[])
                 handle_del(text, line_number - 1);
             }
             line_number = get_line_number(text);
-            show_text(text, 1);
+            if (auto_show)
+                show_text(text, highlight_flag);
         }
         else if (strcmp(buf, "save") == 0)
         {
@@ -594,6 +603,25 @@ int main(int argc, char *argv[])
         else if (strcmp(buf, "help") == 0)
         {
             handle_help();
+        }
+        else if(strcmp(buf,"show")==0){
+            auto_show=1;
+            printf(1,"\e[0;32mEnable auto show successful\n\e[0m");
+        }
+        else if(strcmp(buf,"hide")==0){
+            auto_show=1;
+            printf(1,"\e[0;32mDisable auto show successful\n\e[0m");
+        }
+        else if(strcmp(buf,"rollback")==0){
+            handle_rollback();
+        }
+        else if(strcmp(buf,"highlight")==0){
+            highlight_flag=1;
+            printf(1,"\e[0;32mEnable highlight successful\n\e[0m");
+        }
+        else if(strcmp(buf,"nhighlight")==0){
+            highlight_flag=0;
+            printf(1,"\e[0;32mDisable highlight successful\n\e[0m");
         }
         else
         {
