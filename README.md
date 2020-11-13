@@ -19,5 +19,7 @@
 |rollback|rollback the file|
 
 ## TODO
-- [ ] support rollback
-- [ ] support undo redo
+- [x] support rollback
+- [x] support undo redo
+- [ ] prompt user if save when exit
+- [ ] search text
