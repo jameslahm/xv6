@@ -399,6 +399,22 @@ void handle_help()
     printf(1, "--------+--------------------------------------------------------------\n");
 }
 
+void handle_rollback(char *text[],char *text_backup[]){
+    int i;
+    for(i=0;i<MAX_LINE_NUMBER && text_backup[i]!=NULL;i++){
+        if(text[i]==NULL){
+            text[i]=(char*)malloc(BUF_SIZE);
+        }
+        memset(text[i],0,BUF_SIZE);
+        strcpy(text[i],text_backup[i]);
+    }
+
+    for(int j=i;j<MAX_LINE_NUMBER && text[j]!=NULL;j++){
+        free(text[j]);
+        text[j]=NULL;
+    }
+}
+
 // string to number
 int s2num(char *src)
 {
@@ -460,6 +476,7 @@ int main(int argc, char *argv[])
     int highlight_flag =1;
 
     char *text[MAX_LINE_NUMBER] = {0};
+    char *text_backup[MAX_LINE_NUMBER]={0};
     // total lines
     int line_number = 0;
     // current line offset
@@ -504,6 +521,12 @@ int main(int argc, char *argv[])
             }
         };
         memset(buf, 0, BUF_SIZE);
+    }
+
+    for(int i=0;i<MAX_LINE_NUMBER && text[i]!=NULL;i++){
+        text_backup[i]=(char*)malloc(BUF_SIZE);
+        memset(text_backup[i],0,BUF_SIZE);
+        strcpy(text_backup[i],text[i]);
     }
 
     line_number = get_line_number(text);
@@ -613,7 +636,8 @@ int main(int argc, char *argv[])
             printf(1,"\e[0;32mDisable auto show successful\n\e[0m");
         }
         else if(strcmp(buf,"rollback")==0){
-            handle_rollback();
+            handle_rollback(text,text_backup);
+            handle_save(filename,text);
         }
         else if(strcmp(buf,"highlight")==0){
             highlight_flag=1;
