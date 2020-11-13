@@ -24,9 +24,11 @@
 
 #define BUF_SIZE 256
 #define MAX_LINE_NUMBER 256
-#define MAX_STACK_NUMBER 10
+#define MAX_STACK_NUMBER 50
 
 #define NULL 0
+
+#define DEBUG 1
 
 // only command stack
 enum CommandType
@@ -335,6 +337,7 @@ void push_command(struct CommandStack *command_stack, enum CommandType type, int
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, content);
         command_stack->stack[command_stack->stack_pos].content = buf;
+        buf = (char *)malloc(BUF_SIZE);
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, old_content);
         command_stack->stack[command_stack->stack_pos].old_content=buf;
@@ -349,6 +352,7 @@ void handle_del(char *text[],int line,struct CommandStack *command_stack);
 void handle_undo(char *text[], struct CommandStack *command_stack)
 {
     if(command_stack->stack_pos==-1){
+        printf(1,"\e[0;31mNo actions\n\e[0m");
         return;
     }
     struct Command *command = &command_stack->stack[command_stack->stack_pos];
@@ -367,6 +371,7 @@ void handle_undo(char *text[], struct CommandStack *command_stack)
 
 void handle_redo(char *text[],struct CommandStack *command_stack){
     if(command_stack->max_stack_pos==command_stack->stack_pos){
+        printf(1,"\e[0;31mNo actions\n\e[0m");
         return;
     }
     command_stack->stack_pos++;
@@ -421,7 +426,9 @@ void handle_mod(char *text[], int line_number, char *content, struct CommandStac
     }
 
     if (command_stack)
+    {
         push_command(command_stack, MOD, line_number,content,text[line_number]);
+    }
     memset(text[line_number], 0, BUF_SIZE);
     strcpy(text[line_number], content);
     return;
