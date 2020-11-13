@@ -342,6 +342,10 @@ void push_command(struct CommandStack *command_stack, enum CommandType type, int
     }
 }
 
+void handle_ins(char *text[],int line,char* content,struct CommandStack *command_stack);
+void handle_mod(char *text[],int line,char* content,struct CommandStack *command_stack);
+void handle_del(char *text[],int line,struct CommandStack *command_stack);
+
 void handle_undo(char *text[], struct CommandStack *command_stack)
 {
     if(command_stack->stack_pos==-1){
@@ -407,8 +411,6 @@ void handle_ins(char *text[], int line_number, char *content, struct CommandStac
 
 void handle_mod(char *text[], int line_number, char *content, struct CommandStack *command_stack)
 {
-    int current_line_number = get_line_number(text);
-
     if (*content == '\0')
     {
         printf(1, "\e[0;35mPlease input the content: \e[0m");
