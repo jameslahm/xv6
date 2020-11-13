@@ -24,8 +24,33 @@
 
 #define BUF_SIZE 256
 #define MAX_LINE_NUMBER 256
+#define MAX_STACK_NUMBER 100
 
 #define NULL 0
+
+// only command stack
+enum CommandType
+{
+    INS,
+    DEL,
+    MOD
+};
+
+struct Command
+{
+    enum CommandType type;
+    int line;
+    char *content;
+    // for mod
+    char *old_content;
+};
+
+struct CommandStack
+{
+    struct Command stack[MAX_STACK_NUMBER];
+    int stack_pos;
+    int max_stack_pos;
+};
 
 // show text, flag control if highlight
 void show_text(char *text[], int flag)
@@ -280,15 +305,83 @@ int get_line_number(char *text[])
     return line_number;
 }
 
-void handle_ins(char *text[], int line_number, char *content)
+void push_command(struct CommandStack *command_stack, enum CommandType type, int line, char *content,char *old_content)
 {
-    int current_line_number = get_line_number(text);
-
-    if (line_number > current_line_number)
+    if (type == INS)
     {
-        printf(2, "\e[0;31mInvalid line number\n\e[0m");
+        command_stack->stack[++command_stack->stack_pos].type = INS;
+        command_stack->stack[command_stack->stack_pos].line = line;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = content;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+    if (type == DEL)
+    {
+        command_stack->stack[++command_stack->stack_pos].type = DEL;
+        command_stack->stack[command_stack->stack_pos].line = line;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = buf;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+    if (type == MOD)
+    {
+        command_stack->stack[++command_stack->stack_pos].type = MOD;
+        command_stack->stack[command_stack->stack_pos].line = line;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = content;
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, old_content);
+        command_stack->stack[command_stack->stack_pos].old_content=old_content;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+}
+
+void handle_undo(char *text[], struct CommandStack *command_stack)
+{
+    if(command_stack->stack_pos==-1){
         return;
     }
+    struct Command *command = &command_stack->stack[command_stack->stack_pos];
+    if (command->type == INS)
+    {
+        handle_del(text, command->line, NULL);
+    }
+    if(command->type==MOD){
+        handle_mod(text,command->line,command->old_content,NULL);
+    }
+    if(command->type==DEL){
+        handle_ins(text,command->line,command->content,NULL);
+    }
+    command_stack->stack_pos--;
+}
+
+void handle_redo(char *text[],struct CommandStack *command_stack){
+    if(command_stack->max_stack_pos==command_stack->stack_pos){
+        return;
+    }
+    command_stack->stack_pos++;
+    struct Command *command = &command_stack->stack[command_stack->stack_pos];
+    if (command->type == INS)
+    {
+        handle_ins(text,command->line,command->content,NULL);
+    }
+    if(command->type==MOD){
+        handle_mod(text,command->line,command->content,NULL);
+    }
+    if(command->type==DEL){
+        handle_del(text,command->line,NULL);
+    }
+}
+
+void handle_ins(char *text[], int line_number, char *content, struct CommandStack *command_stack)
+{
+    int current_line_number = get_line_number(text);
 
     if (*content == '\0')
     {
@@ -306,18 +399,15 @@ void handle_ins(char *text[], int line_number, char *content)
     }
     memset(text[line_number], 0, BUF_SIZE);
     strcpy(text[line_number], content);
+
+    if (command_stack)
+        push_command(command_stack, INS, line_number, content,NULL);
     return;
 }
 
-void handle_mod(char *text[], int line_number, char *content)
+void handle_mod(char *text[], int line_number, char *content, struct CommandStack *command_stack)
 {
     int current_line_number = get_line_number(text);
-
-    if (line_number >= current_line_number)
-    {
-        printf(2, "\e[0;31mInvalid line number\n\e[0m");
-        return;
-    }
 
     if (*content == '\0')
     {
@@ -328,20 +418,19 @@ void handle_mod(char *text[], int line_number, char *content)
         content = input;
     }
 
+    if (command_stack)
+        push_command(command_stack, MOD, line_number,content,text[line_number]);
     memset(text[line_number], 0, BUF_SIZE);
     strcpy(text[line_number], content);
     return;
 }
 
-void handle_del(char *text[], int line_number)
+void handle_del(char *text[], int line_number, struct CommandStack *command_stack)
 {
     int current_line_number = get_line_number(text);
 
-    if (line_number >= current_line_number)
-    {
-        printf(2, "\e[0;31mInvalid line number\n\e[0m");
-        return;
-    }
+    if (command_stack)
+        push_command(command_stack, DEL, line_number, text[line_number],NULL);
 
     for (int i = line_number; i < current_line_number - 1; i++)
     {
@@ -393,25 +482,31 @@ void handle_help()
     printf(1, "\e[1;32mhighlight:\e[0m 	| enable highlight text.\n");
     printf(1, "\e[1;32mhighlight:\e[0m 	| disable highlight text.\n");
     printf(1, "\e[1;32msave:\e[0m 	| save the file\n");
-    printf(1, "\e[1;32mexit:\e[0m 	| exit editor\n");
+    printf(1, "\e[1;32mexit:\e[0m   | exit editor\n");
     printf(1, "\e[1;32mhelp:\e[0m	| help info\n");
     printf(1, "\e[1;32mrollback:\e[0m	| rollback the file\n");
+    printf(1, "\e[1;32mundo\e[0m   | undo\n");
+    printf(1, "\e[1;32mredo\e[0m   | redo\n");
     printf(1, "--------+--------------------------------------------------------------\n");
 }
 
-void handle_rollback(char *text[],char *text_backup[]){
+void handle_rollback(char *text[], char *text_backup[])
+{
     int i;
-    for(i=0;i<MAX_LINE_NUMBER && text_backup[i]!=NULL;i++){
-        if(text[i]==NULL){
-            text[i]=(char*)malloc(BUF_SIZE);
+    for (i = 0; i < MAX_LINE_NUMBER && text_backup[i] != NULL; i++)
+    {
+        if (text[i] == NULL)
+        {
+            text[i] = (char *)malloc(BUF_SIZE);
         }
-        memset(text[i],0,BUF_SIZE);
-        strcpy(text[i],text_backup[i]);
+        memset(text[i], 0, BUF_SIZE);
+        strcpy(text[i], text_backup[i]);
     }
 
-    for(int j=i;j<MAX_LINE_NUMBER && text[j]!=NULL;j++){
+    for (int j = i; j < MAX_LINE_NUMBER && text[j] != NULL; j++)
+    {
         free(text[j]);
-        text[j]=NULL;
+        text[j] = NULL;
     }
 }
 
@@ -467,16 +562,21 @@ int main(int argc, char *argv[])
         }
     }
 
+    // support command stack
+    struct CommandStack command_stack;
+    command_stack.stack_pos = -1;
+    command_stack.max_stack_pos = -1;
+
     // read file into text buf
     char *filename = argv[1];
 
     // if auto show text after change
     int auto_show = 1;
 
-    int highlight_flag =1;
+    int highlight_flag = 1;
 
     char *text[MAX_LINE_NUMBER] = {0};
-    char *text_backup[MAX_LINE_NUMBER]={0};
+    char *text_backup[MAX_LINE_NUMBER] = {0};
     // total lines
     int line_number = 0;
     // current line offset
@@ -523,10 +623,11 @@ int main(int argc, char *argv[])
         memset(buf, 0, BUF_SIZE);
     }
 
-    for(int i=0;i<MAX_LINE_NUMBER && text[i]!=NULL;i++){
-        text_backup[i]=(char*)malloc(BUF_SIZE);
-        memset(text_backup[i],0,BUF_SIZE);
-        strcpy(text_backup[i],text[i]);
+    for (int i = 0; i < MAX_LINE_NUMBER && text[i] != NULL; i++)
+    {
+        text_backup[i] = (char *)malloc(BUF_SIZE);
+        memset(text_backup[i], 0, BUF_SIZE);
+        strcpy(text_backup[i], text[i]);
     }
 
     line_number = get_line_number(text);
@@ -550,9 +651,9 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1)
+                if (number != -1 || number > line_number)
                 {
-                    handle_ins(text, number - 1, buf + pos + 1);
+                    handle_ins(text, number - 1, buf + pos + 1, &command_stack);
                 }
                 else
                 {
@@ -562,7 +663,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                handle_ins(text, line_number, buf + pos + 1);
+                handle_ins(text, line_number, buf + pos + 1, &command_stack);
             }
             line_number = get_line_number(text);
             if (auto_show)
@@ -573,9 +674,9 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1)
+                if (number != -1 || number >= line_number)
                 {
-                    handle_mod(text, number - 1, buf + pos + 1);
+                    handle_mod(text, number - 1, buf + pos + 1, &command_stack);
                 }
                 else
                 {
@@ -585,7 +686,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                handle_mod(text, line_number - 1, buf + pos + 1);
+                handle_mod(text, line_number - 1, buf + pos + 1, &command_stack);
             }
             line_number = get_line_number(text);
             if (auto_show)
@@ -596,9 +697,9 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1)
+                if (number != -1 || number >= line_number)
                 {
-                    handle_del(text, number - 1);
+                    handle_del(text, number - 1, &command_stack);
                 }
                 else
                 {
@@ -608,7 +709,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                handle_del(text, line_number - 1);
+                handle_del(text, line_number - 1, &command_stack);
             }
             line_number = get_line_number(text);
             if (auto_show)
@@ -627,25 +728,38 @@ int main(int argc, char *argv[])
         {
             handle_help();
         }
-        else if(strcmp(buf,"show")==0){
-            auto_show=1;
-            printf(1,"\e[0;32mEnable auto show successful\n\e[0m");
+        else if (strcmp(buf, "show") == 0)
+        {
+            auto_show = 1;
+            printf(1, "\e[0;32mEnable auto show successful\n\e[0m");
         }
-        else if(strcmp(buf,"hide")==0){
-            auto_show=1;
-            printf(1,"\e[0;32mDisable auto show successful\n\e[0m");
+        else if (strcmp(buf, "hide") == 0)
+        {
+            auto_show = 1;
+            printf(1, "\e[0;32mDisable auto show successful\n\e[0m");
         }
-        else if(strcmp(buf,"rollback")==0){
-            handle_rollback(text,text_backup);
-            handle_save(filename,text);
+        else if (strcmp(buf, "rollback") == 0)
+        {
+            handle_rollback(text, text_backup);
+            handle_save(filename, text);
         }
-        else if(strcmp(buf,"highlight")==0){
-            highlight_flag=1;
-            printf(1,"\e[0;32mEnable highlight successful\n\e[0m");
+        else if (strcmp(buf, "highlight") == 0)
+        {
+            highlight_flag = 1;
+            printf(1, "\e[0;32mEnable highlight successful\n\e[0m");
         }
-        else if(strcmp(buf,"nhighlight")==0){
-            highlight_flag=0;
-            printf(1,"\e[0;32mDisable highlight successful\n\e[0m");
+        else if (strcmp(buf, "nhighlight") == 0)
+        {
+            highlight_flag = 0;
+            printf(1, "\e[0;32mDisable highlight successful\n\e[0m");
+        }
+        else if (strcmp(buf, "undo") == 0)
+        {
+            handle_undo(text, &command_stack);
+        }
+        else if (strcmp(buf, "redo") == 0)
+        {
+            handle_redo(text, &command_stack);
         }
         else
         {
