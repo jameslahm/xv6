@@ -24,7 +24,7 @@
 
 #define BUF_SIZE 256
 #define MAX_LINE_NUMBER 256
-#define MAX_STACK_NUMBER 100
+#define MAX_STACK_NUMBER 10
 
 #define NULL 0
 
@@ -314,7 +314,7 @@ void push_command(struct CommandStack *command_stack, enum CommandType type, int
         char *buf = (char *)malloc(BUF_SIZE);
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, content);
-        command_stack->stack[command_stack->stack_pos].content = content;
+        command_stack->stack[command_stack->stack_pos].content = buf;
         command_stack->max_stack_pos = command_stack->stack_pos;
     }
     if (type == DEL)
@@ -334,10 +334,10 @@ void push_command(struct CommandStack *command_stack, enum CommandType type, int
         char *buf = (char *)malloc(BUF_SIZE);
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, content);
-        command_stack->stack[command_stack->stack_pos].content = content;
+        command_stack->stack[command_stack->stack_pos].content = buf;
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, old_content);
-        command_stack->stack[command_stack->stack_pos].old_content=old_content;
+        command_stack->stack[command_stack->stack_pos].old_content=buf;
         command_stack->max_stack_pos = command_stack->stack_pos;
     }
 }
@@ -481,14 +481,14 @@ void handle_help()
     printf(1, "\e[1;32mdel:\e[0m 	| delete last line\n");
     printf(1, "\e[1;32mshow:\e[0m 	| enable auto show text\n");
     printf(1, "\e[1;32mhide:\e[0m 	| disable auto show text\n");
-    printf(1, "\e[1;32mhighlight:\e[0m 	| enable highlight text.\n");
-    printf(1, "\e[1;32mhighlight:\e[0m 	| disable highlight text.\n");
+    printf(1, "\e[1;32mhighl:\e[0m 	| enable highlight text.\n");
+    printf(1, "\e[1;32mnhighl:\e[0m | disable highlight text.\n");
     printf(1, "\e[1;32msave:\e[0m 	| save the file\n");
     printf(1, "\e[1;32mexit:\e[0m   | exit editor\n");
     printf(1, "\e[1;32mhelp:\e[0m	| help info\n");
-    printf(1, "\e[1;32mrollback:\e[0m	| rollback the file\n");
-    printf(1, "\e[1;32mundo\e[0m   | undo\n");
-    printf(1, "\e[1;32mredo\e[0m   | redo\n");
+    printf(1, "\e[1;32mrb:\e[0m	    | rollback the file\n");
+    printf(1, "\e[1;32mundo\e[0m    | undo\n");
+    printf(1, "\e[1;32mredo\e[0m    | redo\n");
     printf(1, "--------+--------------------------------------------------------------\n");
 }
 
@@ -510,6 +510,7 @@ void handle_rollback(char *text[], char *text_backup[])
         free(text[j]);
         text[j] = NULL;
     }
+    printf(1, "\e[0;32mRollback successful\n\e[0m");
 }
 
 // string to number
@@ -653,7 +654,7 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1 || number > line_number)
+                if (number != -1 && number <= line_number)
                 {
                     handle_ins(text, number - 1, buf + pos + 1, &command_stack);
                 }
@@ -676,7 +677,7 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1 || number >= line_number)
+                if (number != -1 && (number-1) < line_number)
                 {
                     handle_mod(text, number - 1, buf + pos + 1, &command_stack);
                 }
@@ -699,7 +700,7 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1 || number >= line_number)
+                if (number != -1 && (number-1) < line_number)
                 {
                     handle_del(text, number - 1, &command_stack);
                 }
@@ -740,32 +741,47 @@ int main(int argc, char *argv[])
             auto_show = 1;
             printf(1, "\e[0;32mDisable auto show successful\n\e[0m");
         }
-        else if (strcmp(buf, "rollback") == 0)
+        else if (strcmp(buf, "rb") == 0)
         {
             handle_rollback(text, text_backup);
             handle_save(filename, text);
         }
-        else if (strcmp(buf, "highlight") == 0)
+        else if (strcmp(buf, "highl") == 0)
         {
             highlight_flag = 1;
             printf(1, "\e[0;32mEnable highlight successful\n\e[0m");
+            if(auto_show){
+                show_text(text,highlight_flag);
+            }
         }
-        else if (strcmp(buf, "nhighlight") == 0)
+        else if (strcmp(buf, "nhighl") == 0)
         {
             highlight_flag = 0;
             printf(1, "\e[0;32mDisable highlight successful\n\e[0m");
+            if(auto_show){
+                show_text(text,highlight_flag);
+            }
         }
         else if (strcmp(buf, "undo") == 0)
         {
             handle_undo(text, &command_stack);
+            if(auto_show){
+                show_text(text,highlight_flag);
+            }
         }
         else if (strcmp(buf, "redo") == 0)
         {
             handle_redo(text, &command_stack);
+            if(auto_show){
+                show_text(text,highlight_flag);
+            }
         }
         else
         {
             printf(2, "\e[0;31mminvalid command\e[0m\n");
+            if(auto_show){
+                show_text(text,highlight_flag);
+            }
         }
     }
 
