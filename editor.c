@@ -380,16 +380,16 @@ void handle_exit()
 
 void handle_help()
 {
-    printf(1, ">>> \e[1;33mInstructions for use:\n\e[0m");
+    printf(1, ">>> \e[1;33mCommands:\n\e[0m");
     printf(1, "--------+--------------------------------------------------------------\n");
-    printf(1, "\e[1;32mins-n:\e[0m 	| insert a line after line n\n");
-    printf(1, "\e[1;32mmod-n:\e[0m 	| modify line n\n");
-    printf(1, "\e[1;32mdel-n:\e[0m 	| delete line n\n");
-    printf(1, "\e[1;32mins:\e[0m 	| insert a line after the last line\n");
-    printf(1, "\e[1;32mmod:\e[0m 	| modify the last line\n");
-    printf(1, "\e[1;32mdel:\e[0m 	| delete the last line\n");
-    printf(1, "\e[1;32mshow:\e[0m 	| enable show current contents after executing a command.\n");
-    printf(1, "\e[1;32mhide:\e[0m 	| disable show current contents after executing a command.\n");
+    printf(1, "\e[1;32mins-n:\e[0m 	| insert new line at n\n");
+    printf(1, "\e[1;32mmod-n:\e[0m 	| modify line at n\n");
+    printf(1, "\e[1;32mdel-n:\e[0m 	| delete line at n\n");
+    printf(1, "\e[1;32mins:\e[0m 	| insert new line at last line\n");
+    printf(1, "\e[1;32mmod:\e[0m 	| modify last line\n");
+    printf(1, "\e[1;32mdel:\e[0m 	| delete last line\n");
+    printf(1, "\e[1;32mshow:\e[0m 	| enable auto show text\n");
+    printf(1, "\e[1;32mhide:\e[0m 	| disable auto show text\n");
     printf(1, "\e[1;32mhighlight:\e[0m 	| enable highlight text.\n");
     printf(1, "\e[1;32mhighlight:\e[0m 	| disable highlight text.\n");
     printf(1, "\e[1;32msave:\e[0m 	| save the file\n");
