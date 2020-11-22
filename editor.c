@@ -496,6 +496,7 @@ void handle_help()
     printf(1, "\e[1;32mrb:\e[0m	    | rollback the file\n");
     printf(1, "\e[1;32mundo\e[0m    | undo\n");
     printf(1, "\e[1;32mredo\e[0m    | redo\n");
+    printf(1, "\e[1;32mprint\e[0m   | print all content\n");
     printf(1, "--------+--------------------------------------------------------------\n");
 }
 
@@ -782,6 +783,10 @@ int main(int argc, char *argv[])
             if(auto_show){
                 show_text(text,highlight_flag);
             }
+        }
+        else if (strcmp(buf, "print") == 0)
+        {
+            show_text(text,highlight_flag);
         }
         else
         {
