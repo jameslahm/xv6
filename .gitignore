@@ -42,3 +42,6 @@ xv6.img
 zombie.sym
 _editor
 editor.sym
+.vscode
+demo.sym
+_demo
