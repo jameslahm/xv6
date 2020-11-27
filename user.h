@@ -1,4 +1,11 @@
 struct stat;
+struct rtcdate;
+struct RGBA;
+struct RGB;
+struct message;
+struct window;
+
+typedef void(*Handler)(struct window *win, int index, struct message *msg);
 
 // system calls
 int fork(void);
@@ -36,3 +43,26 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+// bitmap.c
+int readBitmapFile(char *, struct RGBA *, int *, int *);
+int read24BitmapFile(char *, struct RGB *, int *, int *);
+
+// window_manager.c
+int createwindow(int, int, const char *, struct RGB *, int);
+int destroywindow(int);
+int getmessage(int, struct message *);
+int updatewindow(int, int, int, int, int);
+
+// themis_ui.c
+void UI_createWindow(struct window *, const char*, int);
+void UI_destroyWindow(struct window *);
+void updatePartWindow(struct window *, int, int, int, int);
+int addImageWidget(struct window *, struct RGB *, int, int, int, int);
+int addLabelWidget(struct window *, struct RGBA, char *, int, int, int, int);
+int addButtonWidget(struct window *, struct RGBA, struct RGBA, char *, Handler, int, int, int, int);
+int addInputWidget(struct window *, struct RGBA, char *, int, int, int, int);
+int addTextAreaWidget(struct window *, struct RGBA, char *, int, int, int, int);
+int addFileListWidget(struct window *, char *, int, int, int, int, int);
+void drawAllWidget(struct window *);
+void mainLoop(struct window *);

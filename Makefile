@@ -28,6 +28,9 @@ OBJS = \
 	vectors.o\
 	vm.o\
 	gui.o\
+	msg.o\
+	mouse.o\
+	wm.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 #TOOLPREFIX = i386-jos-elf-
@@ -172,6 +175,10 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_editor\
+	_Editor\
+	_explorer\
+	_desktop\
+	_image_viewer\
 	_demo\
 
 fs.img: mkfs README $(UPROGS)

@@ -1,38 +1,50 @@
+#include "types.h"
+#include "defs.h"
+#include "param.h"
+#include "memlayout.h"
+#include "mmu.h"
+#include "proc.h"
+#include "x86.h"
+#include "spinlock.h"
 #include "gui.h"
+#include "character.h"
+#include "bitmap.h"
 #include "mouse.h"
 
 struct spinlock screen_lock;
 struct spinlock buf1_lock;
 struct spinlock buf2_lock;
 
-RGB *screen = NULL;
-RGB *screen_buf1 = NULL;
-RGB *screen_buf2 = NULL;
+RGB *screen = 0;
+RGB *screen_buf1 = 0;
+RGB *screen_buf2 = 0;
 
 void initGUI() {
-    uint vgaMem = KERNBASE + 0x1028;
-    uint base_addr = *((uint *)vgaMem);
-    screen = (RGB*) base_addr;
+    uint GraphicMem = KERNBASE + 0x1028;
+    uint baseAdd = *((uint *) GraphicMem);
+    screen = (RGB *) baseAdd;
     SCREEN_WIDTH = *((ushort *) (KERNBASE + 0x1012));
     SCREEN_HEIGHT = *((ushort *) (KERNBASE + 0x1014));
-    SCREEN_SIZE = (SCREEN_WIDTH * SCREEN_HEIGHT) *3;
-    screen_buf1 = (RGB*)(base_addr + SCREEN_SIZE);
-    screen_buf2 = (RGB*) (base_addr + SCREEN_SIZE *2);
-    initlock(&screen_lock,"screen");
-    initlock(&screen_buf1,"screen_buf_1");
-    initlock(&screen_buf2,"screen_buf_2");
+    screen_size = (SCREEN_WIDTH * SCREEN_HEIGHT) * 3;
+    screen_buf1 = (RGB *) (baseAdd + screen_size);
+    screen_buf2 = (RGB *) (baseAdd + screen_size * 2);
+    initlock(&screen_lock, "screen");
+    initlock(&buf1_lock, "buffer_1");
+    initlock(&buf2_lock, "buffer_2");
 
-    mouse_color[0].G =0;
-    mouse_color[0].B =0;
-    mouse_color[0].R =0;
-    mouse_color[1].G = 180;
-    mouse_color[1].B = 180;
-    mouse_color[1].R = 180;
-    
+    mouse_color[0].G = 0;
+    mouse_color[0].B = 0;
+    mouse_color[0].R = 0;
+    mouse_color[1].G = 200;
+    mouse_color[1].B = 200;
+    mouse_color[1].R = 200;
+
     cprintf("@Screen Width:   %d\n", SCREEN_WIDTH);
     cprintf("@Screen Height:  %d\n", SCREEN_HEIGHT);
     cprintf("@Bits per pixel: %d\n", *((uchar *) (KERNBASE + 0x1019)));
     cprintf("@Video card drivers initialized successfully.\n");
+
+    wmInit();
 }
 
 void acquireGUILock(RGB *buf) {
@@ -55,7 +67,7 @@ void releaseGUILock(RGB *buf) {
     }
 }
 
-void drawPoint(RGB *color,RGB origin){
+void drawPoint(RGB *color, RGB origin) {
     color->R = origin.R;
     color->G = origin.G;
     color->B = origin.B;

@@ -4,9 +4,40 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
+struct rtcdate;
 struct spinlock;
 struct stat;
 struct superblock;
+struct RGB;
+struct RGBA;
+struct message;
+
+//window_manager.c
+void            wmInit(void);
+void            wmHandleMessage(struct message*);
+
+//msg.c
+int             handleMessage(struct message*);
+
+// gui.c
+extern ushort   SCREEN_WIDTH;
+extern ushort   SCREEN_HEIGHT;
+extern struct RGB* screen;
+extern struct RGB* screen_buf1;
+extern struct RGB* screen_buf2;
+void            initGUI(void);
+int             drawCharacter(struct RGB*, int, int, char, struct RGBA);
+void            drawString(struct RGB*, int, int, char *, struct RGBA);
+void            drawMouse(struct RGB*, int, int, int);
+void            clearMouse(struct RGB*, struct RGB*,int, int);
+void            drawRect(struct RGB*, int, int, int, int, struct RGBA);
+void            clearRect(struct RGB*, struct RGB*, int, int, int, int);
+void            drawRectByCoord(struct RGB*, int, int, int, int, struct RGBA);
+void            clearRectByCoord(struct RGB*, struct RGB*, int, int, int, int);
+void            draw24Image(struct RGB*, struct RGB*, int, int, int, int, int, int);
+void            draw24ImagePart(struct RGB*, struct RGB*, int, int, int, int, int, int, int, int);
+void            drawImage(struct RGB*, struct RGBA*, int, int, int, int, int, int);
+void            drawRectBound(struct RGB*, int, int, int, int, struct RGBA, int, int);
 
 // bio.c
 void            binit(void);
@@ -71,6 +102,7 @@ void            kinit2(void*, void*);
 void            kbdintr(void);
 
 // lapic.c
+void            cmostime(struct rtcdate *r);
 int             cpunum(void);
 extern volatile uint*    lapic;
 void            lapiceoi(void);
@@ -81,14 +113,18 @@ void            microdelay(int);
 // log.c
 void            initlog(void);
 void            log_write(struct buf*);
-void            begin_trans();
-void            commit_trans();
+void            begin_op();
+void            end_op();
 
 // mp.c
 extern int      ismp;
 int             mpbcpu(void);
 void            mpinit(void);
 void            mpstartthem(void);
+
+// mouse.c
+void            mouseinit(void);
+void            mouseintr(uint);
 
 // picirq.c
 void            picenable(int);
@@ -177,34 +213,5 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
-// gui.c
-extern ushort   SCREEN_WIDTH;
-extern ushort   SCREEN_HEIGHT;
-extern struct RGB* screen;
-extern struct RGB* screen_buf1;
-extern struct RGB* screen_buf2;
-void            initGUI(void);
-int             drawCharacter(RGB*, int, int, char,RGBA);
-void            drawString(RGB*, int, int, char *,RGBA);
-void            drawMouse(RGB*, int, int, int);
-void            clearMouse(RGB*, RGB*,int, int);
-void            drawRect(RGB*, int, int, int, int,RGBA);
-void            clearRect(RGB*, RGB*, int, int, int, int);
-void            drawRectByCoord(RGB*, int, int, int, int,RGBA);
-void            clearRectByCoord(RGB*,RGB*, int, int, int, int);
-void            draw24Image(RGB*,RGB*, int, int, int, int, int, int);
-void            draw24ImagePart(RGB*,RGB*, int, int, int, int, int, int, int, int);
-void            drawImage(RGB*, RGBA*, int, int, int, int, int, int);
-void            drawRectBound(RGB*, int, int, int, int,RGBA, int, int);
-
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
-
-// mouse.c
-void            mouseinit();
-void            mouseintr(uint);
-
-// wm.c
-struct Message;
-void handle_message(Message *msg);
-

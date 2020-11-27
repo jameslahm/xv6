@@ -1,45 +1,28 @@
-#ifndef __WM_H__
-#define __WM_H__
-
-#include "msg.h"
-#include "gui.h"
-#include "defs.h"
-#include "spinlock.h"
-#include "proc.h"
+#ifndef __WINDOW_MANAGER_H__
+#define __WINDOW_MANAGER_H__
 
 #define MSG_BUF_SIZE 50
 #define MAX_TITLE_LEN 50
-#define MAX_WINDOW_CNT 50
-#define MOUSE_SPEED_X 0.6f;
-#define MOUSE_SPEED_Y -0.6f;
 
-typedef struct {
-    int xmin,xmax,ymin,ymax;
-} Rect;
+typedef struct win_rect
+{
+	int xmin, xmax, ymin, ymax;
+} win_rect;
 
-typedef struct {
-    Message msgs[MSG_BUF_SIZE];
-    int front,rear,cnt;
-} Message_Buf;
+typedef struct msg_buf
+{
+	message data[MSG_BUF_SIZE];
+	int front, rear, cnt;
+} msg_buf;
 
-typedef struct {
-    Rect contents;
-    Rect titlebar;
-    Message_Buf buf;
-    RGB* content_buf;
-    int alwaysfront;
-    char title[MAX_TITLE_LEN];
-} Window;
-
-typedef struct {
-    struct proc* proc;
-    Window wnd;
-    int next,prev;
-} WindowList;
-
-typedef struct {
-    float x;
-    float y;
-} Point;
+typedef struct window
+{
+	win_rect contents;
+	win_rect titlebar;
+	msg_buf buf;
+	struct RGB *content_buf;
+	int alwaysfront;
+	char title[MAX_TITLE_LEN];
+} window;
 
 #endif

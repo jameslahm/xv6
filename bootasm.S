@@ -1,7 +1,7 @@
 #include "asm.h"
 #include "memlayout.h"
 #include "mmu.h"
-#include "color.h"
+#include "gui.h"
 
 # Start the first CPU: switch to 32-bit protected mode, jump into C.
 # The BIOS loads this code from the first sector of the hard disk into
@@ -14,17 +14,18 @@ start:
   cli                         # BIOS enabled interrupts; disable
 
 initvga:
-  # Set vga mode
-  movb    $0x00,%ah
-  movb    $0x12,%al
+  movb    $0x4f,%ah
+  movb    $0x01,%al
+  movw    $0x4115,%cx
+  movw    $0x1000,%di
   int     $0x10
-  # Set background
-  xorw    %bx,%bx
-  movb    $0x10,%ah
-  movb    $0x10,%al
-  movb    $0, %dh
-  movb    $42, %ch
-  movb    $42, %cl
+
+  movw    $GUI_BUF,%bx
+  movw    %bx, %es
+
+  movb    $0x4f,%ah
+  movb    $0x02,%al
+  movw    $0x4115,%bx
   int     $0x10
 
   # Zero data segment registers DS, ES, and SS.
