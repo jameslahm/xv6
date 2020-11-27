@@ -68,6 +68,7 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_MOUSE:
+    mouseintr(ticks);
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_COM1:
