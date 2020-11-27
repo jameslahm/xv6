@@ -1,5 +1,5 @@
-#ifndef MSG_H
-#define MSG_H
+#ifndef __MSG_H__
+#define __MSG_H__
 
 #define MSG_MOUSE_MOVE 1
 #define MSG_MOUSE_DOWN 2

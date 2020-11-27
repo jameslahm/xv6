@@ -178,7 +178,24 @@ int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
 // gui.c
-void            initGUI();
+extern ushort   SCREEN_WIDTH;
+extern ushort   SCREEN_HEIGHT;
+extern struct RGB* screen;
+extern struct RGB* screen_buf1;
+extern struct RGB* screen_buf2;
+void            initGUI(void);
+int             drawCharacter(RGB*, int, int, char,RGBA);
+void            drawString(RGB*, int, int, char *,RGBA);
+void            drawMouse(RGB*, int, int, int);
+void            clearMouse(RGB*, RGB*,int, int);
+void            drawRect(RGB*, int, int, int, int,RGBA);
+void            clearRect(RGB*, RGB*, int, int, int, int);
+void            drawRectByCoord(RGB*, int, int, int, int,RGBA);
+void            clearRectByCoord(RGB*,RGB*, int, int, int, int);
+void            draw24Image(RGB*,RGB*, int, int, int, int, int, int);
+void            draw24ImagePart(RGB*,RGB*, int, int, int, int, int, int, int, int);
+void            drawImage(RGB*, RGBA*, int, int, int, int, int, int);
+void            drawRectBound(RGB*, int, int, int, int,RGBA, int, int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
@@ -186,3 +203,8 @@ void            initGUI();
 // mouse.c
 void            mouseinit();
 void            mouseintr(uint);
+
+// wm.c
+struct Message;
+void handle_message(Message *msg);
+
