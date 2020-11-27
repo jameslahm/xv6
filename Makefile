@@ -164,10 +164,9 @@ UPROGS=\
 	_init\
 	_desktop\
 	_Editor\
-	_demo\
 
-fs.img: mkfs README readme.txt desktop.bmp explorer.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
-	./mkfs fs.img README readme.txt desktop.bmp explorer.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
+fs.img: mkfs README readme.txt desktop.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
+	./mkfs fs.img README readme.txt desktop.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
 
 -include *.d
 

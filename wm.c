@@ -8,7 +8,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-
+#include "icon.h"
 #include "wm.h"
 
 int min(int x, int y) { return x < y ? x : y; }
@@ -130,16 +130,21 @@ void getWindowRect(int handler, win_rect *res)
     res->ymax = wnd->contents.ymax + 3;
 }
 
+// draw close icon
+
+
 void drawWindowBar(struct RGB *dst, window *wnd, struct RGBA barcolor)
 {  
     struct RGBA closecolor, txtcolor;
     closecolor.R = 200; closecolor.G = 50; closecolor.B = 10; closecolor.A = 255;
     txtcolor.R = txtcolor.G = txtcolor.B = txtcolor.A = 255;
     drawRectByCoord(dst, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax - 30, wnd->titlebar.ymax, barcolor);
-    drawRectByCoord(dst, wnd->titlebar.xmax - 30, wnd->titlebar.ymin, wnd->titlebar.xmax - 3, wnd->titlebar.ymax, closecolor);
     drawRectByCoord(dst, wnd->titlebar.xmax - 3, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3, barcolor);
     drawRectByCoord(dst, wnd->titlebar.xmin, wnd->contents.ymin, wnd->contents.xmin, wnd->contents.ymax + 3, barcolor);
     drawRectByCoord(dst, wnd->contents.xmin, wnd->contents.ymax, wnd->contents.xmax, wnd->contents.ymax + 3, barcolor);
+
+	drawCloseIcon(dst, wnd->titlebar.xmax - 30, wnd->titlebar.ymin, 27, wnd->titlebar.ymax - wnd->titlebar.ymin,barcolor,closecolor,closeIcon);
+
     drawString(dst, wnd->titlebar.xmin + 5, wnd->titlebar.ymin + 3, wnd->title, txtcolor);
 }
 

@@ -217,6 +217,34 @@ void drawRectBound(RGB *buf, int x, int y, int width, int height, RGBA fill, int
     releaseGUILock(buf);
 }
 
+
+void drawCloseIcon(RGB *buf,int x,int y,int width,int height,RGBA bg,RGBA fill,unsigned char icon[][27]){
+    int i, j;
+	RGB *t;
+    int max_y = SCREEN_HEIGHT;
+    int max_x = SCREEN_WIDTH;
+    acquireGUILock(buf);
+	for (i = 0; i < height; i++)
+	{
+		if (y + i < 0) continue;
+		if (y + i >= max_y) break;
+		for (j = 0; j < width; j++)
+		{
+			if (x + j < 0) continue;
+			if (x + j >= max_x) break;
+			t = buf + (y + i) * SCREEN_WIDTH + x + j;
+			if(icon[i][j]==1){
+                drawPointAlpha(t, fill);
+            }
+            else{
+                drawPointAlpha(t,bg);
+            }
+		}
+	}
+    releaseGUILock(buf);
+}
+
+
 void drawRect(RGB *buf, int x, int y, int width, int height, RGBA fill) {
     drawRectBound(buf, x, y, width, height, fill, SCREEN_WIDTH, SCREEN_HEIGHT);
 }

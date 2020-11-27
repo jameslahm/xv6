@@ -38,6 +38,7 @@ void            draw24Image(struct RGB*, struct RGB*, int, int, int, int, int, i
 void            draw24ImagePart(struct RGB*, struct RGB*, int, int, int, int, int, int, int, int);
 void            drawImage(struct RGB*, struct RGBA*, int, int, int, int, int, int);
 void            drawRectBound(struct RGB*, int, int, int, int, struct RGBA, int, int);
+void            drawCloseIcon(struct RGB *buf,int x,int y,int width,int height,struct  RGBA bg,struct RGBA fill,unsigned char icon[][27]);
 
 // bio.c
 void            binit(void);
