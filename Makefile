@@ -163,13 +163,11 @@ mkfs: mkfs.c fs.h
 UPROGS=\
 	_init\
 	_desktop\
-	_image_viewer\
 	_Editor\
-	_explorer\
 	_demo\
 
-fs.img: mkfs README readme.txt desktop.bmp explorer.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknow.bmp $(UPROGS)
-	./mkfs fs.img README readme.txt desktop.bmp explorer.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknow.bmp $(UPROGS)
+fs.img: mkfs README readme.txt desktop.bmp explorer.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
+	./mkfs fs.img README readme.txt desktop.bmp explorer.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
 
 -include *.d
 

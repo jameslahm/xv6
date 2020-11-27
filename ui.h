@@ -31,13 +31,12 @@ typedef struct widget_size {
 #define TEXT_AREA 4
 #define FILE_LIST 5
 
-#define FILE_TYPE_NUM 6
-#define EXPLORER_FILE 0
-#define TEXT_FILE 1
-#define BMP_FILE 2
-#define EXEC_FILE 3
-#define FOLDER_FILE 4
-#define UNKNOWN_FILE 5
+#define FILE_TYPE_NUM 5
+#define TEXT_FILE 0
+#define BMP_FILE 1
+#define EXEC_FILE 2
+#define FOLDER_FILE 3
+#define UNKNOWN_FILE 4
 
 #define ICON_IMG_SIZE 64
 #define ICON_VIEW_SIZE 90
