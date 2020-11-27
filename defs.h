@@ -12,7 +12,7 @@ struct RGB;
 struct RGBA;
 struct message;
 
-//window_manager.c
+//wm.c
 void            wmInit(void);
 void            wmHandleMessage(struct message*);
 

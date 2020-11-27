@@ -29,3 +29,8 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(createwindow)
+SYSCALL(getmessage)
+SYSCALL(destroywindow)
+SYSCALL(updatewindow)
+

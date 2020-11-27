@@ -1,32 +1,4 @@
-## XV6 Editor
-
-### Command List
-|   Command     |   Action                          |
-|   :-:         |   :-:                             |
-|   ins-n       |   insert new line at n            |
-|   ins         |   insert new line at last line    |
-|   mod-n       |   modify line at n                |
-|   mod         |   modify last line                |
-|   del-n       |   delete line at n                |
-|   del         |   delete last line                |
-|   show        |   enable auto show text           |
-|   hide        |   disbale auto show text          |
-|   highlight   |   enable highlight text           |
-|   nhighlight  |   disable highlight text          |
-|   save        |   save file                       |
-|   exit        |   exit editor                     |
-|   help        |   show help info                  |
-|   rollback    |   rollback the file               |
-|   print       |   print all content               |
-
-## TODO
-- [x] support rollback
-- [x] support undo redo
-- [ ] prompt user if save when exit
-- [ ] search text
-
-## Launch
-
-```bash
-qemu-system-i386 -serial mon:stdio -hdb fs.img xv6.img -smp 1 -m 512
-```
+xv6_gui
+=======
+#Notation:
+When working on Windows and copy it to linux, <strong>ALWAYS</strong> remember to give execution permission to file sign.pl.

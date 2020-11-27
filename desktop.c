@@ -9,7 +9,7 @@ RGB image[800 * 600];
 
 int main() {
     int h, w;
-    Window desktop;
+    window desktop;
     desktop.width = MAX_WIDTH;
     desktop.height = MAX_HEIGHT;
     UI_createWindow(&desktop, "", 0);

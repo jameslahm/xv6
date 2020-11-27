@@ -1,14 +1,22 @@
+#include "types.h"
+#include "stat.h"
+#include "color.h"
+#include "msg.h"
+#include "user.h"
+#include "fcntl.h"
 #include "ui.h"
+#include "character.h"
+#include "fs.h"
 
-void drawImageWidget(Window *win, int index);
-void drawLabelWidget(Window *win, int index);
-void drawButtonWidget(Window *win, int index);
-void drawInputWidget(Window *win, int index);
-void drawTextAreaWidget(Window *win, int index);
-void drawFileListWidget(Window *win, int index);
+void drawImageWidget(window *win, int index);
+void drawLabelWidget(window *win, int index);
+void drawButtonWidget(window *win, int index);
+void drawInputWidget(window *win, int index);
+void drawTextAreaWidget(window *win, int index);
+void drawFileListWidget(window *win, int index);
 
-void fileListDoubleClickHandler(Window *win, int index, Message *msg);
-void textAreaKeyDownHandler(Window *win, int index, Message *msg);
+void fileListDoubleClickHandler(window *win, int index, message *msg);
+void textAreaKeyDownHandler(window *win, int index, message *msg);
 
 char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {"explorer.bmp",
                                                          "txt.bmp",
@@ -17,7 +25,7 @@ char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {"explorer.bmp",
                                                          "folder.bmp",
                                                          "unknow.bmp"};
 
-void UI_createWindow(Window *win, const char* title, int alwaysfront) {
+void UI_createWindow(window *win, const char* title, int alwaysfront) {
     if (win->width > MAX_WIDTH || win->height > MAX_HEIGHT) {
         win->handler = -1;
         return;
@@ -28,7 +36,7 @@ void UI_createWindow(Window *win, const char* title, int alwaysfront) {
         return;
     }
     memset(win->window_buf, 255, win->height * win->width * 3);
-    win->handler = createWindow(win->width, win->height, title, win->window_buf, alwaysfront);
+    win->handler = createwindow(win->width, win->height, title, win->window_buf, alwaysfront);
 }
 
 void freeWidget(Widget *widget) {
@@ -54,7 +62,7 @@ void freeWidget(Widget *widget) {
     }
 }
 
-void UI_destroyWindow(Window *win) {
+void UI_destroyWindow(window *win) {
     free(win->window_buf);
     int i;
     for (i = 0; i < win->widget_number; i++) {
@@ -72,12 +80,12 @@ void UI_destroyWindow(Window *win) {
         }
         freeWidget(&win->widgets[i]);
     }
-    destroyWindow(win->handler);
+    destroywindow(win->handler);
 }
 
 // system call
-void updatePartWindow(Window *win, int x, int y, int w, int h) {
-    updateWindow(win->handler, x, y, w, h);
+void updatePartWindow(window *win, int x, int y, int w, int h) {
+    updatewindow(win->handler, x, y, w, h);
 }
 
 void setWidgetSize(Widget *widget, int x, int y, int w, int h) {
@@ -87,7 +95,7 @@ void setWidgetSize(Widget *widget, int x, int y, int w, int h) {
     widget->size.width = w;
 }
 
-int addImageWidget(Window *win, RGB *image, int x, int y, int w, int h) {
+int addImageWidget(window *win, RGB *image, int x, int y, int w, int h) {
     if (win->widget_number >= MAX_WIDGET) {
         return -1;
     }
@@ -102,7 +110,7 @@ int addImageWidget(Window *win, RGB *image, int x, int y, int w, int h) {
     return (win->widget_number - 1);
 }
 
-int addLabelWidget(Window *win, RGBA c, char* text, int x, int y, int w, int h) {
+int addLabelWidget(window *win, RGBA c, char* text, int x, int y, int w, int h) {
     if (win->widget_number >= MAX_WIDGET) {
         return -1;
     }
@@ -118,7 +126,7 @@ int addLabelWidget(Window *win, RGBA c, char* text, int x, int y, int w, int h) 
     return (win->widget_number - 1);
 }
 
-int addButtonWidget(Window *win, RGBA c, RGBA bc, char* text, Handler handler, int x, int y, int w, int h) {
+int addButtonWidget(window *win, RGBA c, RGBA bc, char* text, Handler handler, int x, int y, int w, int h) {
     if (win->widget_number >= MAX_WIDGET) {
         return -1;
     }
@@ -136,7 +144,7 @@ int addButtonWidget(Window *win, RGBA c, RGBA bc, char* text, Handler handler, i
     return (win->widget_number - 1);
 }
 
-int addInputWidget(Window *win, RGBA c, char *text, int x, int y, int w, int h) {
+int addInputWidget(window *win, RGBA c, char *text, int x, int y, int w, int h) {
     if (win->widget_number >= MAX_WIDGET) {
         return -1;
     }
@@ -154,7 +162,7 @@ int addInputWidget(Window *win, RGBA c, char *text, int x, int y, int w, int h) 
     return (win->widget_number - 1);
 }
 
-int addTextAreaWidget(Window *win, RGBA c, char *text, int x, int y, int w, int h) {
+int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int h) {
     if (win->widget_number >= MAX_WIDGET) {
         return -1;
     }
@@ -251,7 +259,7 @@ void UI_ls(char *path, Widget *widget)
     }
 }
 
-int addFileListWidget(Window *win, char *path, int direction, int x, int y, int w, int h) {
+int addFileListWidget(window *win, char *path, int direction, int x, int y, int w, int h) {
     if (win->widget_number >= MAX_WIDGET) {
         return -1;
     }
@@ -304,7 +312,7 @@ void drawPointAlpha(RGB *color, RGBA origin) {
     color->B = color->B * (1 - alpha) + origin.B * alpha;
 }
 
-int drawCharacter(Window *win, int x, int y, char ch, RGBA color) {
+int drawCharacter(window *win, int x, int y, char ch, RGBA color) {
     int i, j;
     RGB *t;
     int ord = ch - 0x20;
@@ -334,7 +342,7 @@ int drawCharacter(Window *win, int x, int y, char ch, RGBA color) {
     return CHARACTER_WIDTH;
 }
 
-void drawString(Window *win, int x, int y, char *str, RGBA color, int width) {
+void drawString(window *win, int x, int y, char *str, RGBA color, int width) {
     int offset_x = 0;
 
     while (*str != '\0') {
@@ -346,7 +354,7 @@ void drawString(Window *win, int x, int y, char *str, RGBA color, int width) {
     }
 }
 
-void drawImage(Window *win, RGBA *img, int x, int y, int width, int height) {
+void drawImage(window *win, RGBA *img, int x, int y, int width, int height) {
     int i, j;
     RGB *t;
     RGBA *o;
@@ -371,7 +379,7 @@ void drawImage(Window *win, RGBA *img, int x, int y, int width, int height) {
     }
 }
 
-void draw24Image(Window *win, RGB *img, int x, int y, int width, int height) {
+void draw24Image(window *win, RGB *img, int x, int y, int width, int height) {
     int i;
     RGB *t;
     RGB *o;
@@ -389,7 +397,7 @@ void draw24Image(Window *win, RGB *img, int x, int y, int width, int height) {
     }
 }
 
-void drawRect(Window *win, RGB color, int x, int y, int width, int height) {
+void drawRect(window *win, RGB color, int x, int y, int width, int height) {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0
         || x < 0 || y < 0 || width < 0 || height < 0) {
         return;
@@ -416,7 +424,7 @@ void drawRect(Window *win, RGB color, int x, int y, int width, int height) {
     }
 }
 
-void drawFillRect(Window *win, RGBA color, int x, int y, int width, int height) {
+void drawFillRect(window *win, RGBA color, int x, int y, int width, int height) {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0
         || x < 0 || y < 0 || width < 0 || height < 0) {
         return;
@@ -443,7 +451,7 @@ void drawFillRect(Window *win, RGBA color, int x, int y, int width, int height) 
     }
 }
 
-void draw24FillRect(Window *win, RGB color, int x, int y, int width, int height) {
+void draw24FillRect(window *win, RGB color, int x, int y, int width, int height) {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0
         || x < 0 || y < 0 || width < 0 || height < 0) {
         return;
@@ -470,17 +478,17 @@ void draw24FillRect(Window *win, RGB color, int x, int y, int width, int height)
     }
 }
 
-void drawImageWidget(Window *win, int index) {
+void drawImageWidget(window *win, int index) {
     Widget *w = &(win->widgets[index]);
     draw24Image(win, w->context.image->image, w->size.x, w->size.y, w->size.width, w->size.height);
 }
 
-void drawLabelWidget(Window *win, int index) {
+void drawLabelWidget(window *win, int index) {
     Widget *w = &(win->widgets[index]);
     drawString(win, w->size.x, w->size.y, w->context.label->text, w->context.label->color, w->size.width);
 }
 
-void drawButtonWidget(Window *win, int index) {
+void drawButtonWidget(window *win, int index) {
     Widget *w = &(win->widgets[index]);
     RGB black;
     black.R = 0;
@@ -491,7 +499,7 @@ void drawButtonWidget(Window *win, int index) {
     drawString(win, w->size.x, w->size.y, w->context.button->text,  w->context.button->color, w->size.width);
 }
 
-void drawInputWidget(Window *win, int index) {
+void drawInputWidget(window *win, int index) {
     Widget *w = &(win->widgets[index]);
     RGB black, white;
     black.R = 0; black.G = 0; black.B = 0;
@@ -501,7 +509,7 @@ void drawInputWidget(Window *win, int index) {
     drawString(win, w->size.x + 3, w->size.y + 2, w->context.button->text, w->context.input->color, w->size.width - 3);
 }
 
-void drawTextAreaWidget(Window *win, int index) {
+void drawTextAreaWidget(window *win, int index) {
     Widget *w = &(win->widgets[index]);
 
     RGB white;
@@ -538,7 +546,7 @@ void drawTextAreaWidget(Window *win, int index) {
     }
 }
 
-void drawFileListWidget(Window *win, int index) {
+void drawFileListWidget(window *win, int index) {
     Widget *w = &(win->widgets[index]);
 
     int max_num_y = w->size.height / ICON_VIEW_SIZE;
@@ -606,12 +614,12 @@ void drawFileListWidget(Window *win, int index) {
 
 }
 
-void drawAllWidget(Window *win) {
+void drawAllWidget(window *win) {
     int i;
     for (i = 0; i < win->widget_number; i++) {
         win->widgets[i].paint(win, i);
     }
-    updateWindow(win->handler, 0, 0, win->width, win->height);
+    updatewindow(win->handler, 0, 0, win->width, win->height);
 }
 
 void UI_suffix(char *t, char *s)
@@ -635,7 +643,7 @@ void UI_suffix(char *t, char *s)
     strcpy(t, s);
 }
 
-void textAreaKeyDownHandler(Window *win, int index, Message *msg) {
+void textAreaKeyDownHandler(window *win, int index, message *msg) {
     Widget *w = &(win->widgets[index]);
 
     int len = strlen(w->context.textArea->text);
@@ -659,7 +667,7 @@ void textAreaKeyDownHandler(Window *win, int index, Message *msg) {
     updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
 }
 
-void fileListDoubleClickHandler(Window *win, int index, Message *msg) {
+void fileListDoubleClickHandler(window *win, int index, message *msg) {
     Widget *w = &(win->widgets[index]);
 
     int max_num_y = w->size.height / ICON_VIEW_SIZE;
@@ -710,15 +718,15 @@ void fileListDoubleClickHandler(Window *win, int index, Message *msg) {
     }
 }
 
-void mainLoop(Window *win) {
-    Message msg;
+void mainLoop(window *win) {
+    message msg;
     while (1) {
-        if (getMessage(win->handler, &msg)) {
-            if (msg.msg_type == MSG_WINDOW_CLOSE) {
+        if (getmessage(win->handler, &msg)) {
+            if (msg.msg_type == WM_WINDOW_CLOSE) {
                 UI_destroyWindow(win);
                 break;
             }
-            if (msg.msg_type == MSG_MOUSE_DBCLICK) {
+            if (msg.msg_type == M_MOUSE_DBCLICK) {
                 int i;
                 for (i = 0; i < win->widget_number; i++) {
                     if (win->widgets[i].type == FILE_LIST) {
@@ -726,7 +734,7 @@ void mainLoop(Window *win) {
                         break;
                     }
                 }
-            } else if (msg.msg_type == MSG_KEY_DOWN) {
+            } else if (msg.msg_type == M_KEY_DOWN) {
                 int i;
                 for (i = 0; i < win->widget_number; i++) {
                     if (win->widgets[i].type == TEXT_AREA) {
@@ -734,7 +742,7 @@ void mainLoop(Window *win) {
                         break;
                     }
                 }
-            } else if (msg.msg_type == MSG_MOUSE_LEFT_CLICK) {
+            } else if (msg.msg_type == M_MOUSE_LEFT_CLICK) {
                 int i;
                 for (i = 0; i < win->widget_number; i++) {
                     if (win->widgets[i].type == BUTTON) {

@@ -1,5 +1,7 @@
-#ifndef __WINDOW_MANAGER_H__
-#define __WINDOW_MANAGER_H__
+#ifndef __WM_H__
+#define __WM_H__
+
+#include "msg.h"
 
 #define MSG_BUF_SIZE 50
 #define MAX_TITLE_LEN 50

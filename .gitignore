@@ -45,3 +45,5 @@ editor.sym
 .vscode
 demo.sym
 _demo
+_*
+*.sym

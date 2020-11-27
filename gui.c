@@ -9,7 +9,7 @@
 #include "gui.h"
 #include "character.h"
 #include "bitmap.h"
-#include "mouse.h"
+#include "mouse_shape.h"
 
 struct spinlock screen_lock;
 struct spinlock buf1_lock;

@@ -2,8 +2,8 @@
 
 #ifndef __ASSEMBLER__
 
-#ifndef __GUI_BASE_H__
-#define __GUI_BASE_H__
+#ifndef __GUI_H__
+#define __GUI_H__
 
 ushort SCREEN_WIDTH;
 ushort SCREEN_HEIGHT;
@@ -24,6 +24,6 @@ typedef struct RGBA {
     unsigned char A;
 } RGBA;
 
-#endif // GUI_BASE_H
+#endif // GUI_H
 
 #endif
