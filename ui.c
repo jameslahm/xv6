@@ -659,11 +659,11 @@ void drawFileListWidget(window *win, int index)
 
     IconView *p = w->context.fileList->file_list;
     int i;
-    RGBA black;
-    black.A = 255;
-    black.R = 0;
-    black.G = 0;
-    black.B = 0;
+    RGBA white;
+    white.A = 255;
+    white.R = 255;
+    white.G = 255;
+    white.B = 255;
     for (i = 0; i < w->context.fileList->file_num; i++)
     {
         drawImage(win, p->image, offset_x + current_x * ICON_VIEW_SIZE + 13,
@@ -671,7 +671,7 @@ void drawFileListWidget(window *win, int index)
         if (strlen(p->text) <= 9)
         {
             drawString(win, offset_x + current_x * ICON_VIEW_SIZE + (9 - strlen(p->text)) * 9 / 2 + 5,
-                       offset_y + current_y * ICON_VIEW_SIZE + 4 + ICON_IMG_SIZE, p->text, black,
+                       offset_y + current_y * ICON_VIEW_SIZE + 4 + ICON_IMG_SIZE, p->text, white,
                        ICON_VIEW_SIZE - 2);
         }
         else
@@ -685,7 +685,7 @@ void drawFileListWidget(window *win, int index)
             temp[9] = '\0';
             drawString(win, offset_x + current_x * ICON_VIEW_SIZE + 5,
                        offset_y + current_y * ICON_VIEW_SIZE + ICON_IMG_SIZE, temp,
-                       black, ICON_VIEW_SIZE - 2);
+                       white, ICON_VIEW_SIZE - 2);
             for (j = 0; j < 9; j++)
             {
                 if (!p->text[j + 9])
@@ -697,7 +697,7 @@ void drawFileListWidget(window *win, int index)
             temp[j] = '\0';
             drawString(win, offset_x + current_x * ICON_VIEW_SIZE + (9 - strlen(temp)) * 9 / 2 + 5,
                        offset_y + current_y * ICON_VIEW_SIZE + ICON_IMG_SIZE + 16, temp,
-                       black, ICON_VIEW_SIZE - 2);
+                       white, ICON_VIEW_SIZE - 2);
         }
         if (w->context.fileList->direction == 0)
         {
