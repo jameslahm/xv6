@@ -152,7 +152,7 @@ void drawWindow(int layer, int handler, int refresh)
 {
 	window *wnd = &windowlist[handler].wnd;
     struct RGBA barcolor, wndcolor;
-    barcolor.R = 170; barcolor.G = 150; barcolor.B = 100; barcolor.A = 255;
+    barcolor.R = 74; barcolor.G = 134; barcolor.B = 232; barcolor.A = 255;
     if (layer == 2) barcolor.R = barcolor.G = barcolor.B = 140;
     wndcolor.R = wndcolor.G = wndcolor.B = wndcolor.A = 255;
     struct RGB *dst;
@@ -252,8 +252,10 @@ int createWindow(int width, int height, const char *title, struct RGB *buf, int 
 
 	initqueue(&windowlist[idx].wnd.buf);
 	//initial window position according to idx
-	int offsetX = (100 + idx * 47) % (SCREEN_WIDTH - 130) + 30;
-	int offsetY = (100 + idx * 33) % (SCREEN_HEIGHT - 130) + 30;
+	// int offsetX = (100 + idx * 47) % (SCREEN_WIDTH - 130) + 30;
+	// int offsetY = (100 + idx * 33) % (SCREEN_HEIGHT - 130) + 30;
+	int offsetX = 10;
+	int offsetY = 20;
 	if (len == 0 && desktopHandler == -100) {
 		desktopHandler = idx;
 		createRectBySize(&windowlist[idx].wnd.contents, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);

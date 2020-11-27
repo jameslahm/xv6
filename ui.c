@@ -612,7 +612,7 @@ void drawTextAreaWidget(window *win, int index)
     white.G = 255;
     white.B = 255;
     draw24FillRect(win, white, w->size.x, w->size.y, w->size.width, w->size.height);
-
+    
     int max_num = w->size.width / CHARACTER_WIDTH;
     int max_line = w->size.height / CHARACTER_HEIGHT;
 

@@ -29,12 +29,12 @@ int main(int argc, char *argv[]) {
     black.B = 0;
     RGBA red;
     red.A = 255;
-    red.R = 0;
-    red.G = 255;
-    red.B = 0;
+    red.R = 211;
+    red.G = 80;
+    red.B = 80;
     window editor;
-    editor.width = 400;
-    editor.height = 300;
+    editor.width = 770;
+    editor.height = 570;
     UI_createWindow(&editor, "Editor", 0);
     int file = -1;
     if (argc > 1) {
@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
     } else {
         strcpy(filename, "new.txt");
     }
-    int panel = addTextAreaWidget(&editor, black, "", 0, 0, 400, 275);
-    addButtonWidget(&editor, black, red, "save", saveBackBtn, 350, 278, 40, 20);
+    int panel = addTextAreaWidget(&editor, black, "", 0, 0, 770, 540);
+    addButtonWidget(&editor, black, red, "save", saveBackBtn, 720, 540, 40, 20);
     if (file >= 0) {
         read(file, editor.widgets[panel].context.textArea->text, 512);
         close(file);
