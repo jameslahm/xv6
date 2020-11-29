@@ -77,6 +77,8 @@ typedef struct TextArea {
     int copy_start_index;
     int copy_end_index;
 
+    char* temp;
+
     int isCopying;
 
     struct RGBA color;
