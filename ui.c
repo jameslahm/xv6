@@ -205,6 +205,7 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     t->current_line = 0;
     t->select_start_index = -2;
     t->select_end_index = -2;
+    t->isCopying = 0;
     t->begin_line = 0;
     strcpy(t->text, text);
     t->onKeyDown = textAreaKeyDownHandler;
@@ -840,6 +841,16 @@ void UI_suffix(char *t, char *s)
     strcpy(t, s);
 }
 
+int min(int a, int b)
+{
+    return a < b ? a : b;
+}
+
+int max(int a, int b)
+{
+    return a > b ? a : b;
+}
+
 void textAreaKeyDownHandler(window *win, int index, message *msg)
 {
     Widget *w = &(win->widgets[index]);
@@ -884,13 +895,70 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         }
 
         // Ctrl
+        if ((msg->params[1] & 2) == 2)
+        {
+            if (msg->params[0] == 'c')
+            {
+                w->context.textArea->isCopying = 1;
+                w->context.textArea->copy_start_index = w->context.textArea->select_start_index;
+                w->context.textArea->copy_end_index = w->context.textArea->select_end_index;
+            }
+            if (msg->params[0] == 'v')
+            {
+                if(w->context.textArea->isCopying==0){
+                    return;
+                }
+                printf(1,"START: %d",w->context.textArea->copy_start_index);
+                int copyTextLength = w->context.textArea->copy_end_index - w->context.textArea->copy_start_index + 1;
+                char temp[copyTextLength];
+                for(int i=0;i<copyTextLength;i++){
+                    temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index +i];
+                    printf(1,"%c\n",temp[i]);
+                }
+                for (int i = len + copyTextLength - 1; i >= current_line * max_num + current_pos + copyTextLength; i--)
+                {
+                    w->context.textArea->text[i] = w->context.textArea->text[i - copyTextLength];
+                }
+                w->context.textArea->text[len + copyTextLength] = '\0';
+                for (int i = current_line * max_num + current_pos; i < current_line * max_num + current_pos + copyTextLength; i++)
+                {
+                    int j = i - current_line * max_num - current_pos;
+                    w->context.textArea->text[i] = temp[j];
+                    printf(1,"%d:%c\n",i,temp[j]);
+                }
+
+                // w->context.textArea->copy_start_index = w->context.textArea->copy_end_index = -2;
+                w->context.textArea->current_line = (current_line * max_num + current_pos + copyTextLength) / max_num;
+                w->context.textArea->current_pos = (current_line * max_num + current_pos + copyTextLength) % max_num;
+                // w->context.textArea->isCopying =0;
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
+            }
+            if(msg->params[0]=='a'){
+                w->context.textArea->isCopying = 1;
+                w->context.textArea->select_start_index = 0;
+                w->context.textArea->select_end_index = len-1;
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
+            }
+
+            return;
+        }
 
         // Home End
         if (msg->params[0] == KEY_HOME)
         {
-            if((msg->params[1] & 1)==1){
+            if ((msg->params[1] & 1) == 1)
+            {
                 w->context.textArea->select_start_index = current_line * max_num;
                 w->context.textArea->select_end_index = current_line * max_num + current_pos;
+            }
+            else
+            {
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
             }
             w->context.textArea->current_pos = 0;
             drawTextAreaWidget(win, index);
@@ -900,9 +968,15 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
         if (msg->params[0] == KEY_END)
         {
-            if((msg->params[1] & 1)==1){
+            if ((msg->params[1] & 1) == 1)
+            {
                 w->context.textArea->select_start_index = current_line * max_num + current_pos;
-                w->context.textArea->select_end_index = current_line * max_num + max_num-1;
+                w->context.textArea->select_end_index = current_line * max_num + max_num - 1;
+            }
+            else
+            {
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
             }
             w->context.textArea->current_pos = len % max_num;
             drawTextAreaWidget(win, index);
@@ -925,6 +999,30 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     w->context.textArea->current_pos = max_num - 1;
                 }
             }
+            if ((msg->params[1] & 1) == 1)
+            {
+                if (w->context.textArea->select_start_index < 0)
+                {
+                    w->context.textArea->select_start_index = current_line * max_num + current_pos - 1;
+                    w->context.textArea->select_end_index = w->context.textArea->select_start_index;
+                }
+                else
+                {
+                    if (w->context.textArea->select_start_index == current_line * max_num + current_pos)
+                    {
+                        w->context.textArea->select_start_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos;
+                    }
+                    else
+                    {
+                        w->context.textArea->select_end_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos - 1;
+                    }
+                }
+            }
+            else
+            {
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
+            }
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
@@ -944,6 +1042,31 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     w->context.textArea->current_pos++;
                 }
             }
+            if ((msg->params[1] & 1) == 1)
+            {
+                if (w->context.textArea->select_start_index < 0)
+                {
+                    w->context.textArea->select_start_index = current_line * max_num + current_pos;
+                    w->context.textArea->select_end_index = w->context.textArea->select_start_index;
+                }
+                else
+                {
+                    if (w->context.textArea->select_start_index == current_line * max_num + current_pos)
+                    {
+                        w->context.textArea->select_start_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos;
+                    }
+                    else
+                    {
+                        w->context.textArea->select_end_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos - 1;
+                    }
+                }
+            }
+            else
+            {
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
+            }
+
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
@@ -955,6 +1078,20 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             {
                 w->context.textArea->current_line--;
             }
+            if ((msg->params[1] & 1) == 1)
+            {
+                if (w->context.textArea->select_end_index < 0)
+                {
+                    w->context.textArea->select_end_index = current_line * max_num + current_pos - 1;
+                }
+
+                w->context.textArea->select_start_index = w->context.textArea->current_line * max_num + current_pos;
+            }
+            else
+            {
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
+            }
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
@@ -965,15 +1102,28 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             {
                 w->context.textArea->current_line++;
             }
+            if ((msg->params[1] & 1) == 1)
+            {
+                if (w->context.textArea->select_end_index < 0)
+                {
+                    w->context.textArea->select_end_index = current_line * max_num + current_pos;
+                }
+
+                w->context.textArea->select_start_index = w->context.textArea->current_line * max_num + current_pos - 1;
+            }
+            else
+            {
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
+            }
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
         }
 
-
         if (msg->params[0] >= 'a' && msg->params[0] <= 'z' && (msg->params[1] & 1) == 1)
         {
-            for (int i = (current_line * max_num + current_pos + 1); i <= len; i++)
+            for (int i = len; i >= (current_line * max_num + current_pos + 1); i--)
             {
                 w->context.textArea->text[i] = w->context.textArea->text[i - 1];
             }
@@ -994,11 +1144,12 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             return;
         }
 
-        if(msg->params[0]==0){
+        if (msg->params[0] == 0)
+        {
             return;
         }
 
-        for (int i = (current_line * max_num + current_pos + 1); i <= len; i++)
+        for (int i = len; i >= (current_line * max_num + current_pos + 1); i--)
         {
             w->context.textArea->text[i] = w->context.textArea->text[i - 1];
         }
