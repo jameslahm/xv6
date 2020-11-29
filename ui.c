@@ -7,6 +7,17 @@
 #include "ui.h"
 #include "character.h"
 #include "fs.h"
+// #include "kbd.h"
+#define KEY_HOME 0xE0
+#define KEY_END 0xE1
+#define KEY_UP 0xE2
+#define KEY_DN 0xE3
+#define KEY_LF 0xE4
+#define KEY_RT 0xE5
+#define KEY_PGUP 0xE6
+#define KEY_PGDN 0xE7
+#define KEY_INS 0xE8
+#define KEY_DEL 0xE9
 
 void drawImageWidget(window *win, int index);
 void drawLabelWidget(window *win, int index);
@@ -605,8 +616,8 @@ void drawTextAreaWidget(window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
 
-    printf(1,"POS:%d\n",w->context.textArea->current_pos);
-    printf(1,"LINE:%d\n",w->context.textArea->current_line);
+    printf(1, "POS:%d\n", w->context.textArea->current_pos);
+    printf(1, "LINE:%d\n", w->context.textArea->current_line);
 
     RGB white;
     white.R = 255;
@@ -782,6 +793,8 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
     if (msg->msg_type == M_KEY_DOWN)
     {
 
+        printf(1, "DEBUG %x\n", msg->params[0]);
+
         if (msg->params[0] == '\b')
         {
             w->context.textArea->text[len - 1] = '\0';
@@ -810,7 +823,11 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         }
         if (msg->params[0] >= 'a' && msg->params[0] <= 'z' && (msg->params[1] & 1) == 1)
         {
-            w->context.textArea->text[len] = msg->params[0] - 32;
+            for (int i = (current_line * max_num + current_pos + 1); i <= len;i++)
+            {
+                w->context.textArea->text[i] = w->context.textArea->text[i - 1];
+            }
+            w->context.textArea->text[(current_line * max_num + current_pos)] = msg->params[0] - 32;
             w->context.textArea->text[len + 1] = '\0';
             if (current_pos < max_num - 1)
             {
@@ -828,7 +845,72 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         }
         // Ctrl
 
-        w->context.textArea->text[len] = msg->params[0];
+        // Up Down Left Right
+        if (msg->params[0] == KEY_LF)
+        {
+            if (current_pos >= 1)
+            {
+                w->context.textArea->current_pos--;
+            }
+            else
+            {
+                if (current_line >= 1)
+                {
+                    w->context.textArea->current_line--;
+                    w->context.textArea->current_pos = max_num - 1;
+                }
+            }
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+
+        if (msg->params[0] == KEY_RT)
+        {
+            if ((current_line * max_num + current_pos) < len)
+            {
+                if (current_pos == max_num - 1)
+                {
+                    w->context.textArea->current_line++;
+                    w->context.textArea->current_pos = 0;
+                }
+                else
+                {
+                    w->context.textArea->current_pos++;
+                }
+            }
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+
+        if (msg->params[0] == KEY_UP)
+        {
+            if ((current_line * max_num + current_pos) >= max_num)
+            {
+                w->context.textArea->current_line--;
+            }
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+        if (msg->params[0] == KEY_DN)
+        {
+            if (((current_line + 1) * max_num + current_pos) <= len)
+            {
+                w->context.textArea->current_line++;
+            }
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+
+        for (int i = (current_line * max_num + current_pos + 1); i <= len;i++)
+        {
+            w->context.textArea->text[i] = w->context.textArea->text[i - 1];
+        }
+        w->context.textArea->text[(current_line * max_num + current_pos)] = msg->params[0];
+
         w->context.textArea->text[len + 1] = '\0';
 
         if (current_pos < max_num - 1)
@@ -843,18 +925,21 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         drawTextAreaWidget(win, index);
         updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
     }
-    if(msg->msg_type==M_MOUSE_LEFT_CLICK){
+    if (msg->msg_type == M_MOUSE_LEFT_CLICK)
+    {
         int cursor_line = msg->params[1] / w->size.width;
         int cursor_pos = msg->params[0] / CHARACTER_WIDTH;
 
-        printf(1,"cursor line: %d\n",cursor_line);
-        printf(1,"cursor pos:%d\n",cursor_pos);
-        printf(1,"len:%d\n",len);
+        printf(1, "cursor line: %d\n", cursor_line);
+        printf(1, "cursor pos:%d\n", cursor_pos);
+        printf(1, "len:%d\n", len);
 
-        if((cursor_line* max_num + cursor_pos)>= len){
+        if ((cursor_line * max_num + cursor_pos) >= len)
+        {
             return;
         }
-        else{
+        else
+        {
             w->context.textArea->current_line = cursor_line;
             w->context.textArea->current_pos = cursor_pos;
         }
