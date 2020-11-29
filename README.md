@@ -5,5 +5,7 @@
 - [x] Home End
 - [x] Ctrl-C Ctrl-V
 - [x] Ctrl-A
-- [ ] Ctrl-x
+- [x] Ctrl-x
 - [ ] highlight
+- [ ] undo redo
+- [ ] rollback
