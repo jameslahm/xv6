@@ -203,6 +203,8 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     t->color = c;
     t->current_pos = 0;
     t->current_line = 0;
+    t->select_start_index = -2;
+    t->select_end_index = -2;
     t->begin_line = 0;
     strcpy(t->text, text);
     t->onKeyDown = textAreaKeyDownHandler;
@@ -361,6 +363,50 @@ void drawPointAlpha(RGB *color, RGBA origin)
     color->R = color->R * (1 - alpha) + origin.R * alpha;
     color->G = color->G * (1 - alpha) + origin.G * alpha;
     color->B = color->B * (1 - alpha) + origin.B * alpha;
+}
+
+int drawCharacterWithBg(window *win, int x, int y, char ch, RGBA color, RGBA bg)
+{
+    int i, j;
+    RGB *t;
+    int ord = ch - 0x20;
+    if (ord < 0 || ord >= (CHARACTER_NUMBER))
+    {
+        return -1;
+    }
+    for (i = 0; i < CHARACTER_HEIGHT; i++)
+    {
+        if (y + i > win->height)
+        {
+            break;
+        }
+        if (y + i < 0)
+        {
+            continue;
+        }
+        for (j = 0; j < CHARACTER_WIDTH; j++)
+        {
+
+            if (x + j > win->width)
+            {
+                break;
+            }
+            if (x + j < 0)
+            {
+                continue;
+            }
+            t = win->window_buf + (y + i) * win->width + x + j;
+            if (character[ord][i][j] == 1)
+            {
+                drawPointAlpha(t, color);
+            }
+            else
+            {
+                drawPointAlpha(t, bg);
+            }
+        }
+    }
+    return CHARACTER_WIDTH;
 }
 
 int drawCharacter(window *win, int x, int y, char ch, RGBA color)
@@ -625,6 +671,13 @@ void drawTextAreaWidget(window *win, int index)
     white.B = 255;
     draw24FillRect(win, white, w->size.x, w->size.y, w->size.width, w->size.height);
 
+    // for select
+    RGBA gray;
+    gray.A = 255;
+    gray.R = 214;
+    gray.G = 214;
+    gray.B = 194;
+
     int max_num = w->size.width / CHARACTER_WIDTH;
     int max_line = w->size.height / CHARACTER_HEIGHT;
 
@@ -649,8 +702,16 @@ void drawTextAreaWidget(window *win, int index)
                 break;
             }
         }
-        drawCharacter(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
-                      ch, w->context.textArea->color);
+        if (i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index)
+        {
+            drawCharacterWithBg(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
+                                ch, w->context.textArea->color, gray);
+        }
+        else
+        {
+            drawCharacter(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
+                          ch, w->context.textArea->color);
+        }
         current_x++;
         if (current_x >= max_num)
         {
@@ -821,29 +882,33 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         {
             return;
         }
-        if (msg->params[0] >= 'a' && msg->params[0] <= 'z' && (msg->params[1] & 1) == 1)
-        {
-            for (int i = (current_line * max_num + current_pos + 1); i <= len;i++)
-            {
-                w->context.textArea->text[i] = w->context.textArea->text[i - 1];
-            }
-            w->context.textArea->text[(current_line * max_num + current_pos)] = msg->params[0] - 32;
-            w->context.textArea->text[len + 1] = '\0';
-            if (current_pos < max_num - 1)
-            {
-                w->context.textArea->current_pos++;
-            }
-            else
-            {
-                w->context.textArea->current_line++;
-                w->context.textArea->current_pos = 0;
-            }
 
+        // Ctrl
+
+        // Home End
+        if (msg->params[0] == KEY_HOME)
+        {
+            if((msg->params[1] & 1)==1){
+                w->context.textArea->select_start_index = current_line * max_num;
+                w->context.textArea->select_end_index = current_line * max_num + current_pos;
+            }
+            w->context.textArea->current_pos = 0;
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
         }
-        // Ctrl
+
+        if (msg->params[0] == KEY_END)
+        {
+            if((msg->params[1] & 1)==1){
+                w->context.textArea->select_start_index = current_line * max_num + current_pos;
+                w->context.textArea->select_end_index = current_line * max_num + max_num-1;
+            }
+            w->context.textArea->current_pos = len % max_num;
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
 
         // Up Down Left Right
         if (msg->params[0] == KEY_LF)
@@ -905,7 +970,35 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             return;
         }
 
-        for (int i = (current_line * max_num + current_pos + 1); i <= len;i++)
+
+        if (msg->params[0] >= 'a' && msg->params[0] <= 'z' && (msg->params[1] & 1) == 1)
+        {
+            for (int i = (current_line * max_num + current_pos + 1); i <= len; i++)
+            {
+                w->context.textArea->text[i] = w->context.textArea->text[i - 1];
+            }
+            w->context.textArea->text[(current_line * max_num + current_pos)] = msg->params[0] - 32;
+            w->context.textArea->text[len + 1] = '\0';
+            if (current_pos < max_num - 1)
+            {
+                w->context.textArea->current_pos++;
+            }
+            else
+            {
+                w->context.textArea->current_line++;
+                w->context.textArea->current_pos = 0;
+            }
+
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+
+        if(msg->params[0]==0){
+            return;
+        }
+
+        for (int i = (current_line * max_num + current_pos + 1); i <= len; i++)
         {
             w->context.textArea->text[i] = w->context.textArea->text[i - 1];
         }

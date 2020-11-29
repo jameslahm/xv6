@@ -69,6 +69,11 @@ typedef struct TextArea {
     int begin_line;
     int current_line;
     int current_pos;
+
+    // for select
+    int select_start_index;
+    int select_end_index;
+
     struct RGBA color;
     char text[MAX_LONG_STRLEN];
     Handler onKeyDown;
