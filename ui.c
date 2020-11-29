@@ -23,8 +23,7 @@ char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {
     "pic.bmp",
     "exec.bmp",
     "folder.bmp",
-    "unknown.bmp"
-};
+    "unknown.bmp"};
 
 void UI_createWindow(window *win, const char *title, int alwaysfront)
 {
@@ -195,7 +194,6 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     t->current_line = 0;
     t->begin_line = 0;
     strcpy(t->text, text);
-    // TODO: add default handler
     t->onKeyDown = textAreaKeyDownHandler;
     Widget *widget = &win->widgets[win->widget_number];
     widget->paint = drawTextAreaWidget;
@@ -359,7 +357,7 @@ int drawCharacter(window *win, int x, int y, char ch, RGBA color)
     int i, j;
     RGB *t;
     int ord = ch - 0x20;
-    if (ord < 0 || ord >= (CHARACTER_NUMBER - 1))
+    if (ord < 0 || ord >= (CHARACTER_NUMBER))
     {
         return -1;
     }
@@ -607,12 +605,15 @@ void drawTextAreaWidget(window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
 
+    printf(1,"POS:%d\n",w->context.textArea->current_pos);
+    printf(1,"LINE:%d\n",w->context.textArea->current_line);
+
     RGB white;
     white.R = 255;
     white.G = 255;
     white.B = 255;
     draw24FillRect(win, white, w->size.x, w->size.y, w->size.width, w->size.height);
-    
+
     int max_num = w->size.width / CHARACTER_WIDTH;
     int max_line = w->size.height / CHARACTER_HEIGHT;
 
@@ -620,9 +621,15 @@ void drawTextAreaWidget(window *win, int index)
     int current_y = 0;
 
     int i;
-    for (i = 0; w->context.textArea->text[i]; i++)
+    for (i = 0; w->context.textArea->text[i] || (current_x == w->context.textArea->current_pos && current_y == w->context.textArea->current_line); i++)
     {
-        if (w->context.textArea->text[i] == '\n' || w->context.textArea->text[i] == '\r')
+        char ch = w->context.textArea->text[i];
+        if (current_x == w->context.textArea->current_pos && current_y == w->context.textArea->current_line)
+        {
+            ch = 95 + 0x20;
+            i--;
+        }
+        else if (w->context.textArea->text[i] == '\n' || w->context.textArea->text[i] == '\r')
         {
             current_y++;
             current_x = 0;
@@ -632,7 +639,7 @@ void drawTextAreaWidget(window *win, int index)
             }
         }
         drawCharacter(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
-                      w->context.textArea->text[i], w->context.textArea->color);
+                      ch, w->context.textArea->color);
         current_x++;
         if (current_x >= max_num)
         {
@@ -661,41 +668,41 @@ void drawFileListWidget(window *win, int index)
     int i;
     RGBA white;
     white.A = 255;
-    white.R = 255;
-    white.G = 255;
-    white.B = 255;
+    white.R = 180;
+    white.G = 180;
+    white.B = 120;
     for (i = 0; i < w->context.fileList->file_num; i++)
     {
         drawImage(win, p->image, offset_x + current_x * ICON_VIEW_SIZE + 13,
                   offset_y + current_y * ICON_VIEW_SIZE + 4, ICON_IMG_SIZE, ICON_IMG_SIZE);
-        if (strlen(p->text) <= 9)
+        if (strlen(p->text) <= 8)
         {
-            drawString(win, offset_x + current_x * ICON_VIEW_SIZE + (9 - strlen(p->text)) * 9 / 2 + 5,
+            drawString(win, offset_x + current_x * ICON_VIEW_SIZE + (8 - strlen(p->text)) * 8 / 2 + 5,
                        offset_y + current_y * ICON_VIEW_SIZE + 4 + ICON_IMG_SIZE, p->text, white,
                        ICON_VIEW_SIZE - 2);
         }
         else
         {
-            char temp[10];
+            char temp[9];
             int j;
-            for (j = 0; j < 9; j++)
+            for (j = 0; j < 8; j++)
             {
                 temp[j] = p->text[j];
             }
-            temp[9] = '\0';
+            temp[8] = '\0';
             drawString(win, offset_x + current_x * ICON_VIEW_SIZE + 5,
                        offset_y + current_y * ICON_VIEW_SIZE + ICON_IMG_SIZE, temp,
                        white, ICON_VIEW_SIZE - 2);
             for (j = 0; j < 9; j++)
             {
-                if (!p->text[j + 9])
+                if (!p->text[j + 8])
                 {
                     break;
                 }
-                temp[j] = p->text[j + 9];
+                temp[j] = p->text[j + 8];
             }
             temp[j] = '\0';
-            drawString(win, offset_x + current_x * ICON_VIEW_SIZE + (9 - strlen(temp)) * 9 / 2 + 5,
+            drawString(win, offset_x + current_x * ICON_VIEW_SIZE + (8 - strlen(temp)) * 8 / 2 + 5,
                        offset_y + current_y * ICON_VIEW_SIZE + ICON_IMG_SIZE + 16, temp,
                        white, ICON_VIEW_SIZE - 2);
         }
@@ -765,28 +772,95 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 {
     Widget *w = &(win->widgets[index]);
 
+    int max_num = w->size.width / CHARACTER_WIDTH;
+    // int max_line = w->size.height / CHARACTER_HEIGHT;
+    int current_pos = w->context.textArea->current_pos;
+    int current_line = w->context.textArea->current_line;
+
     int len = strlen(w->context.textArea->text);
-    if (msg->params[0] == '\b')
+
+    if (msg->msg_type == M_KEY_DOWN)
     {
-        w->context.textArea->text[len - 1] = '\0';
-        drawTextAreaWidget(win, index);
-        updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
-        return;
-    }
-    if (len > 500)
-        return;
-    if (msg->params[0] >= 'a' && msg->params[0] <= 'z' && (msg->params[1] & 1) == 1)
-    {
-        w->context.textArea->text[len] = msg->params[0] - 32;
+
+        if (msg->params[0] == '\b')
+        {
+            w->context.textArea->text[len - 1] = '\0';
+
+            if (current_pos >= 1)
+            {
+                w->context.textArea->current_pos--;
+            }
+            else
+            {
+                if (current_line >= 1)
+                {
+                    w->context.textArea->current_line--;
+                    w->context.textArea->current_pos = max_num - 1;
+                }
+            }
+
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+
+        if (len >= MAX_LONG_STRLEN - 1)
+        {
+            return;
+        }
+        if (msg->params[0] >= 'a' && msg->params[0] <= 'z' && (msg->params[1] & 1) == 1)
+        {
+            w->context.textArea->text[len] = msg->params[0] - 32;
+            w->context.textArea->text[len + 1] = '\0';
+            if (current_pos < max_num - 1)
+            {
+                w->context.textArea->current_pos++;
+            }
+            else
+            {
+                w->context.textArea->current_line++;
+                w->context.textArea->current_pos = 0;
+            }
+
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+        // Ctrl
+
+        w->context.textArea->text[len] = msg->params[0];
         w->context.textArea->text[len + 1] = '\0';
+
+        if (current_pos < max_num - 1)
+        {
+            w->context.textArea->current_pos++;
+        }
+        else
+        {
+            w->context.textArea->current_line++;
+            w->context.textArea->current_pos = 0;
+        }
         drawTextAreaWidget(win, index);
         updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
-        return;
     }
-    w->context.textArea->text[len] = msg->params[0];
-    w->context.textArea->text[len + 1] = '\0';
-    drawTextAreaWidget(win, index);
-    updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+    if(msg->msg_type==M_MOUSE_LEFT_CLICK){
+        int cursor_line = msg->params[1] / w->size.width;
+        int cursor_pos = msg->params[0] / CHARACTER_WIDTH;
+
+        printf(1,"cursor line: %d\n",cursor_line);
+        printf(1,"cursor pos:%d\n",cursor_pos);
+        printf(1,"len:%d\n",len);
+
+        if((cursor_line* max_num + cursor_pos)>= len){
+            return;
+        }
+        else{
+            w->context.textArea->current_line = cursor_line;
+            w->context.textArea->current_pos = cursor_pos;
+        }
+        drawTextAreaWidget(win, index);
+        updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+    }
 }
 
 void fileListDoubleClickHandler(window *win, int index, message *msg)
@@ -893,6 +967,11 @@ void mainLoop(window *win)
                     if (win->widgets[i].type == BUTTON)
                     {
                         win->widgets[i].context.button->onLeftClick(win, i, &msg);
+                        break;
+                    }
+                    if (win->widgets[i].type == TEXT_AREA)
+                    {
+                        win->widgets[i].context.textArea->onKeyDown(win, i, &msg);
                         break;
                     }
                 }

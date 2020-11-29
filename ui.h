@@ -81,7 +81,6 @@ typedef struct IconView {
     struct IconView *next;
 } IconView;
 
-// TODO: I don't know...
 typedef struct FileList {
     int direction;
     IconView *file_list;

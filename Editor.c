@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         strcpy(filename, "new.txt");
     }
     int panel = addTextAreaWidget(&editor, black, "", 0, 0, 770, 540);
-    addButtonWidget(&editor, black, red, "save", saveBackBtn, 720, 540, 40, 20);
+    addButtonWidget(&editor, black, red, "save", saveBackBtn, 720, 540, 80, 50);
     if (file >= 0) {
         read(file, editor.widgets[panel].context.textArea->text, 512);
         close(file);

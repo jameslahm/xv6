@@ -1,3 +1,6 @@
+#ifndef __USER_H__
+#define __USER_H__
+
 struct stat;
 struct rtcdate;
 struct RGBA;
@@ -66,3 +69,5 @@ int addTextAreaWidget(struct window *, struct RGBA, char *, int, int, int, int);
 int addFileListWidget(struct window *, char *, int, int, int, int, int);
 void drawAllWidget(struct window *);
 void mainLoop(struct window *);
+
+#endif
