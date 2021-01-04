@@ -7,5 +7,8 @@
 - [x] Ctrl-A
 - [x] Ctrl-x
 - [ ] highlight
-- [ ] undo redo
-- [ ] rollback
+- [ ] Ctrl-Z Ctrl-Shift-Z
+- [ ] Ctrl-S
+- [ ] Ctrl-Home
+- [ ] Ctrl-End
+- [ ] Ctrl-F
