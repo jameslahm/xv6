@@ -60,6 +60,7 @@ struct Command
     int index;
     char *content;
     char *old_content;
+    int isBatch;
 };
 
 struct CommandStack

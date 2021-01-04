@@ -7,8 +7,10 @@
 - [x] Ctrl-A
 - [x] Ctrl-x
 - [x] highlight
-- [ ] Ctrl-Z Ctrl-Shift-Z
+- [x] Ctrl-Z Ctrl-Shift-Z
 - [ ] Ctrl-S
 - [x] Ctrl-Home
 - [x] Ctrl-End
-- [ ] Ctrl-F
+- [x] Ctrl-F
+- [ ] Ctrl++
+- [ ] Ctrl+-

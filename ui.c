@@ -30,12 +30,13 @@ void fileListDoubleClickHandler(window *win, int index, message *msg);
 void textAreaKeyDownHandler(window *win, int index, message *msg);
 void generateHighlightRGB(Widget *w);
 
-void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content, char *old_content)
+void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content, char *old_content, int isBatch)
 {
     if (type == ADD)
     {
         command_stack->stack[++command_stack->stack_pos].type = ADD;
         command_stack->stack[command_stack->stack_pos].index = index;
+        command_stack->stack[command_stack->stack_pos].isBatch = isBatch;
         char *buf = (char *)malloc(BUF_SIZE);
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, content);
@@ -46,6 +47,7 @@ void push_command(struct CommandStack *command_stack, enum CommandType type, int
     {
         command_stack->stack[++command_stack->stack_pos].type = DEL;
         command_stack->stack[command_stack->stack_pos].index = index;
+        command_stack->stack[command_stack->stack_pos].isBatch = isBatch;
         char *buf = (char *)malloc(BUF_SIZE);
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, content);
@@ -237,8 +239,11 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     t->isCopying = 0;
     t->begin_line = 0;
     t->temp = 0;
-    memset(t->search_text,0,BUF_SIZE);
-    memset(t->replace_text,0,BUF_SIZE);
+    for(int i=0;i<MAX_LONG_STRLEN;i++){
+        t->command_stack.stack[i].isBatch=0;
+    }
+    memset(t->search_text, 0, BUF_SIZE);
+    memset(t->replace_text, 0, BUF_SIZE);
     strcpy(t->text, text);
     t->onKeyDown = textAreaKeyDownHandler;
     Widget *widget = &win->widgets[win->widget_number];
@@ -718,6 +723,7 @@ void drawTextAreaWidget(window *win, int index)
 
     generateHighlightRGB(w);
     printf(1, "Repaint!!!\n");
+    printf(1,"%s\n",w->context.textArea->text);
 
     int matchIndex[BUF_SIZE];
     int matchNums = 0;
@@ -1250,7 +1256,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 char *search_text = w->context.textArea->search_text;
                 while (1)
                 {
-                    int flag=0;
+                    int flag = 0;
                     for (int i = 0; i <= strlen(text) - strlen(search_text); i++)
                     {
                         int j = 0;
@@ -1263,31 +1269,36 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                         }
                         if (j == strlen(search_text) && j != 0)
                         {
-                            flag=1;
+                            flag = 1;
                             int text_len = strlen(text);
-                            for (int k=i; k < text_len - strlen(search_text); k++)
+                            for (int k = i; k < text_len - strlen(search_text); k++)
                             {
                                 w->context.textArea->text[k] = w->context.textArea->text[k + strlen(search_text)];
                             }
-                            for (int k = text_len - strlen(search_text);k<text_len;k++)
+                            for (int k = text_len - strlen(search_text); k < text_len; k++)
                             {
                                 w->context.textArea->text[k] = '\0';
                             }
+                            push_command(&w->context.textArea->command_stack, DEL, i, search_text, 0, 1);
 
                             text_len = strlen(text);
 
-                            for (int k= text_len + strlen(replace_text)-1;k>=i+ strlen(replace_text); k--)
+                            for (int k = text_len + strlen(replace_text) - 1; k >= i + strlen(replace_text); k--)
                             {
                                 w->context.textArea->text[k] = w->context.textArea->text[k - strlen(replace_text)];
                             }
-                            for (int k = i;k<strlen(replace_text);k++)
+
+                            for (int k = i; k < i + strlen(replace_text); k++)
                             {
-                                w->context.textArea->text[k] = replace_text[k-i];
+                                w->context.textArea->text[k] = replace_text[k - i];
+                                // printf(1,"Replace %c\n",replace_text[k - i]);
                             }
+                            push_command(&w->context.textArea->command_stack, ADD, i, replace_text, 0, 1);
                             break;
                         }
                     }
-                    if(!flag){
+                    if (!flag)
+                    {
                         break;
                     }
                 }
@@ -1310,7 +1321,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             int insert_index = w->context.textArea->insert_index;
             char temp[2] = {0};
             temp[0] = w->context.textArea->text[insert_index - 1];
-            push_command(&w->context.textArea->command_stack, DEL, insert_index - 1, temp, 0);
+            push_command(&w->context.textArea->command_stack, DEL, insert_index - 1, temp, 0, 0);
             for (int i = w->context.textArea->insert_index - 1; i < len - 1; i++)
             {
                 w->context.textArea->text[i] = w->context.textArea->text[i + 1];
@@ -1384,7 +1395,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 int insert_index = w->context.textArea->insert_index;
                 int copyTextLength = w->context.textArea->copy_end_index - w->context.textArea->copy_start_index + 1;
 
-                push_command(&w->context.textArea->command_stack, ADD, insert_index, w->context.textArea->temp, 0);
+                push_command(&w->context.textArea->command_stack, ADD, insert_index, w->context.textArea->temp, 0, 0);
 
                 for (int i = len + copyTextLength - 1; i >= insert_index + copyTextLength; i--)
                 {
@@ -1427,7 +1438,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index + i];
                 }
-                push_command(&w->context.textArea->command_stack, DEL, w->context.textArea->copy_start_index, w->context.textArea->temp, 0);
+                push_command(&w->context.textArea->command_stack, DEL, w->context.textArea->copy_start_index, w->context.textArea->temp, 0, 0);
                 for (int i = w->context.textArea->copy_start_index; i < len - copyTextLength; i++)
                 {
                     w->context.textArea->text[i] = w->context.textArea->text[i + copyTextLength];
@@ -1458,77 +1469,107 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
             if (msg->params[0] == 'z' && (msg->params[1] & 1) == 1)
             {
-                struct CommandStack *command_stack = &w->context.textArea->command_stack;
-                command_stack->stack_pos++;
-                struct Command *command = &command_stack->stack[command_stack->stack_pos];
-                if (command->type == ADD)
+                while (1)
                 {
-                    for (int i = command->index + strlen(command->content); i < len + strlen(command->content); i++)
+                    struct CommandStack *command_stack = &w->context.textArea->command_stack;
+                    command_stack->stack_pos++;
+                    struct Command *command = &command_stack->stack[command_stack->stack_pos];
+                    int text_len = strlen(w->context.textArea->text);
+                    if (command->type == ADD)
                     {
-                        w->context.textArea->text[i] = w->context.textArea->text[i - strlen(command->content)];
+                        for (int i = command->index + strlen(command->content); i < text_len + strlen(command->content); i++)
+                        {
+                            w->context.textArea->text[i] = w->context.textArea->text[i - strlen(command->content)];
+                        }
+                        for (int i = command->index; i < command->index + strlen(command->content); i++)
+                        {
+                            w->context.textArea->text[i] = command->content[i - command->index];
+                        }
+                        w->context.textArea->current_pos += strlen(command->content);
                     }
-                    for (int i = command->index; i < command->index + strlen(command->content); i++)
+                    if (command->type == DEL)
                     {
-                        w->context.textArea->text[i] = command->content[i - command->index];
+                        for (int i = command->index; i < text_len; i++)
+                        {
+                            w->context.textArea->text[i] = w->context.textArea->text[i + strlen(command->content)];
+                        }
+                        for (int i = text_len - strlen(command->content); i < text_len; i++)
+                        {
+                            w->context.textArea->text[i] = '\0';
+                        }
+                        w->context.textArea->current_pos -= strlen(command->content);
                     }
-                    w->context.textArea->current_pos += strlen(command->content);
-                    drawTextAreaWidget(win, index);
-                    updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
-                    return;
+
+                    if(command_stack->stack_pos+1>command_stack->max_stack_pos){
+                        break;
+                    }
+
+                    struct Command *suc_command = &command_stack->stack[command_stack->stack_pos+1];
+                    if(command->isBatch==1 && suc_command->isBatch==1){
+                        continue;
+                    }
+                    else{
+                        break;
+                    }
                 }
-                if (command->type == DEL)
-                {
-                    for (int i = command->index; i < len; i++)
-                    {
-                        w->context.textArea->text[i] = w->context.textArea->text[i + strlen(command->content)];
-                    }
-                    for (int i = len - strlen(command->content); i < len; i++)
-                    {
-                        w->context.textArea->text[i] = '\0';
-                    }
-                    w->context.textArea->current_pos -= strlen(command->content);
-                    drawTextAreaWidget(win, index);
-                    updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
-                    return;
-                }
+                printf(1,"%s\n",w->context.textArea->text);
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
             }
 
             if (msg->params[0] == 'z')
             {
-                struct CommandStack *command_stack = &w->context.textArea->command_stack;
-                struct Command *command = &command_stack->stack[command_stack->stack_pos];
-                command_stack->stack_pos--;
-                if (command->type == ADD)
+                while (1)
                 {
-                    for (int i = command->index; i < len; i++)
+                    struct CommandStack *command_stack = &w->context.textArea->command_stack;
+                    struct Command *command = &command_stack->stack[command_stack->stack_pos];
+                    command_stack->stack_pos--;
+                    int text_len = strlen(w->context.textArea->text);
+                    if (command->type == ADD)
                     {
-                        w->context.textArea->text[i] = w->context.textArea->text[i + strlen(command->content)];
+                        for (int i = command->index; i < text_len; i++)
+                        {
+                            w->context.textArea->text[i] = w->context.textArea->text[i + strlen(command->content)];
+                        }
+                        for (int i = text_len - strlen(command->content); i < text_len; i++)
+                        {
+                            w->context.textArea->text[i] = '\0';
+                        }
+                        // TODO: fix newline
+                        w->context.textArea->current_pos -= strlen(command->content);
                     }
-                    for (int i = len - strlen(command->content); i < len; i++)
+                    if (command->type == DEL)
                     {
-                        w->context.textArea->text[i] = '\0';
+                        for (int i = command->index + strlen(command->content); i < text_len + strlen(command->content); i++)
+                        {
+                            w->context.textArea->text[i] = w->context.textArea->text[i - strlen(command->content)];
+                        }
+                        for (int i = command->index; i < command->index + strlen(command->content); i++)
+                        {
+                            w->context.textArea->text[i] = command->content[i - command->index];
+                        }
+                        w->context.textArea->current_pos += strlen(command->content);
                     }
-                    // TODO: fix newline
-                    w->context.textArea->current_pos -= strlen(command->content);
-                    drawTextAreaWidget(win, index);
-                    updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
-                    return;
+
+                    if (command_stack->stack_pos < 0)
+                    {
+                        break;
+                    }
+
+                    struct Command *pre_command = &command_stack->stack[command_stack->stack_pos];
+                    if (command->isBatch == 1 && pre_command->isBatch == 1)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                if (command->type == DEL)
-                {
-                    for (int i = command->index + strlen(command->content); i < len + strlen(command->content); i++)
-                    {
-                        w->context.textArea->text[i] = w->context.textArea->text[i - strlen(command->content)];
-                    }
-                    for (int i = command->index; i < command->index + strlen(command->content); i++)
-                    {
-                        w->context.textArea->text[i] = command->content[i - command->index];
-                    }
-                    w->context.textArea->current_pos += strlen(command->content);
-                    drawTextAreaWidget(win, index);
-                    updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
-                    return;
-                }
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
             }
 
             if (msg->params[0] == 'f')
@@ -1737,7 +1778,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             int insert_index = w->context.textArea->insert_index;
             char temp[2] = {0};
             temp[0] = msg->params[0] - 32;
-            push_command(&w->context.textArea->command_stack, ADD, insert_index, temp, 0);
+            push_command(&w->context.textArea->command_stack, ADD, insert_index, temp, 0, 0);
             for (int i = len; i >= (insert_index + 1); i--)
             {
                 w->context.textArea->text[i] = w->context.textArea->text[i - 1];
@@ -1782,7 +1823,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
         char temp[2] = {0};
         temp[0] = msg->params[0];
-        push_command(&w->context.textArea->command_stack, ADD, w->context.textArea->insert_index, temp, 0);
+        push_command(&w->context.textArea->command_stack, ADD, w->context.textArea->insert_index, temp, 0, 0);
 
         for (int i = len; i >= (w->context.textArea->insert_index + 1); i--)
         {
