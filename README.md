@@ -8,9 +8,9 @@
 - [x] Ctrl-x
 - [x] highlight
 - [x] Ctrl-Z Ctrl-Shift-Z
-- [ ] Ctrl-S
+- [x] Ctrl-S
 - [x] Ctrl-Home
 - [x] Ctrl-End
 - [x] Ctrl-F
-- [ ] Ctrl++
-- [ ] Ctrl+-
+- [x] Ctrl++
+- [x] Ctrl+-
