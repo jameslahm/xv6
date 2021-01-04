@@ -704,7 +704,8 @@ void drawTextAreaWidget(window *win, int index)
                 break;
             }
         }
-        if (i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index)
+
+        if (i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index && ch != (95 + 0x20))
         {
             drawCharacterWithBg(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
                                 ch, w->context.textArea->color, gray);
