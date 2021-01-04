@@ -18,7 +18,20 @@
 #define KEY_PGDN 0xE7
 #define KEY_INS 0xE8
 #define KEY_DEL 0xE9
-
+char shift_ascii_map[128] = 
+{
+    [0x30] 0x29, [0x31] 0x21,
+    [0x32] 0x40, [0x33] 0x23,
+    [0x34] 0x24, [0x35] 0x25,
+    [0x36] 0x5E, [0x37] 0x26,
+    [0x38] 0x2A, [0x39] 0x28,
+    [0x2D] 0x5F, [0x3D] 0x2B,
+    [0x5B] 0x7B, [0x5D] 0x7D,
+    [0x5C] 0x7C, [0x3B] 0x3A,
+    [0x27] 0x22, [0x2F] 0x3F,
+    [0x2C] 0x3C, [0x2E] 0x3E,
+    [0x60] 0x7E
+};
 void drawImageWidget(window *win, int index);
 void drawLabelWidget(window *win, int index);
 void drawButtonWidget(window *win, int index);
@@ -1801,13 +1814,9 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         }
 
         // shift key map
-        if (msg->params[0] >= 48 && msg->params[0] <= 57 && (msg->params[1] & 1) == 1)
+        else if (msg->params[0] && (msg->params[1] & 1) == 1)
         {
-            msg->params[0] -= 17;
-        }
-        if (msg->params[0] >= 91 && msg->params[0] <= 93 && (msg->params[1] & 1) == 1)
-        {
-            msg->params[0] += 32;
+            msg->params[0] = shift_ascii_map[msg->params[0]];
         }
 
         if (msg->params[0] == 0)
