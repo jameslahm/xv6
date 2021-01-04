@@ -717,7 +717,7 @@ void drawTextAreaWidget(window *win, int index)
     int i;
 
     generateHighlightRGB(w);
-    printf(1, "Repaint!!!");
+    printf(1, "Repaint!!!\n");
 
     int matchIndex[BUF_SIZE];
     int matchNums = 0;
@@ -743,7 +743,6 @@ void drawTextAreaWidget(window *win, int index)
         }
     }
     int currentMatchIndex = 0;
-    printf(1, "Match Nums: %d", matchNums);
 
     // printf(1,"cursor_line: %d cursor_pos: %d",w->context.textArea->current_line,w->context.textArea->current_pos);
 
@@ -1270,12 +1269,10 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                             {
                                 w->context.textArea->text[k] = w->context.textArea->text[k + strlen(search_text)];
                             }
-                            printf(1,"%s\n",text);
                             for (int k = text_len - strlen(search_text);k<text_len;k++)
                             {
                                 w->context.textArea->text[k] = '\0';
                             }
-                            printf(1,"%s\n",text);
 
                             text_len = strlen(text);
 
@@ -1283,13 +1280,10 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                             {
                                 w->context.textArea->text[k] = w->context.textArea->text[k - strlen(replace_text)];
                             }
-                            printf(1,"%s\n",text);
                             for (int k = i;k<strlen(replace_text);k++)
                             {
                                 w->context.textArea->text[k] = replace_text[k-i];
                             }
-
-                            printf(1,"%s\n",text);
                             break;
                         }
                     }
@@ -1401,7 +1395,6 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     int j = i - insert_index;
                     w->context.textArea->text[i] = w->context.textArea->temp[j];
-                    printf(1, "%d:%c\n", i, w->context.textArea->temp[j]);
                 }
 
                 // w->context.textArea->copy_start_index = w->context.textArea->copy_end_index = -2;
@@ -1465,7 +1458,6 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
             if (msg->params[0] == 'z' && (msg->params[1] & 1) == 1)
             {
-                printf(1, "Ctrl Shift Z");
                 struct CommandStack *command_stack = &w->context.textArea->command_stack;
                 command_stack->stack_pos++;
                 struct Command *command = &command_stack->stack[command_stack->stack_pos];
