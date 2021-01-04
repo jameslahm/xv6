@@ -17,7 +17,7 @@ int main() {
     printf(1, "res: %d\n", res);
 
     addImageWidget(&desktop, image, 0, 0, MAX_WIDTH, MAX_HEIGHT);
-    addFileListWidget(&desktop, "/", 0, 0, 0, MAX_WIDTH, MAX_HEIGHT - 25);
+    addFileListWidget(&desktop, "/", 1, 0, 0, MAX_WIDTH, MAX_HEIGHT - 25);
 
     drawAllWidget(&desktop);
 

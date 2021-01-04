@@ -18,20 +18,9 @@
 #define KEY_PGDN 0xE7
 #define KEY_INS 0xE8
 #define KEY_DEL 0xE9
-char shift_ascii_map[128] = 
-{
-    [0x30] 0x29, [0x31] 0x21,
-    [0x32] 0x40, [0x33] 0x23,
-    [0x34] 0x24, [0x35] 0x25,
-    [0x36] 0x5E, [0x37] 0x26,
-    [0x38] 0x2A, [0x39] 0x28,
-    [0x2D] 0x5F, [0x3D] 0x2B,
-    [0x5B] 0x7B, [0x5D] 0x7D,
-    [0x5C] 0x7C, [0x3B] 0x3A,
-    [0x27] 0x22, [0x2F] 0x3F,
-    [0x2C] 0x3C, [0x2E] 0x3E,
-    [0x60] 0x7E
-};
+char shift_ascii_map[128] =
+    {
+        [0x30] 0x29, [0x31] 0x21, [0x32] 0x40, [0x33] 0x23, [0x34] 0x24, [0x35] 0x25, [0x36] 0x5E, [0x37] 0x26, [0x38] 0x2A, [0x39] 0x28, [0x2D] 0x5F, [0x3D] 0x2B, [0x5B] 0x7B, [0x5D] 0x7D, [0x5C] 0x7C, [0x3B] 0x3A, [0x27] 0x22, [0x2F] 0x3F, [0x2C] 0x3C, [0x2E] 0x3E, [0x60] 0x7E};
 void drawImageWidget(window *win, int index);
 void drawLabelWidget(window *win, int index);
 void drawButtonWidget(window *win, int index);
@@ -251,9 +240,11 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     t->select_end_index = -2;
     t->isCopying = 0;
     t->begin_line = 0;
+    t->scale = 1;
     t->temp = 0;
-    for(int i=0;i<MAX_LONG_STRLEN;i++){
-        t->command_stack.stack[i].isBatch=0;
+    for (int i = 0; i < MAX_LONG_STRLEN; i++)
+    {
+        t->command_stack.stack[i].isBatch = 0;
     }
     memset(t->search_text, 0, BUF_SIZE);
     memset(t->replace_text, 0, BUF_SIZE);
@@ -297,6 +288,12 @@ void UI_ls(char *path, Widget *widget)
     strcpy(buf, path);
     p = buf + strlen(buf);
     *p++ = '/';
+    if (widget->context.fileList->file_list)
+    {
+        free(widget->context.fileList->file_list);
+        widget->context.fileList->file_list = 0;
+    }
+    printf(1, "FileList: %d\n", widget->context.fileList->file_list);
     while (read(fd, &de, sizeof(de)) == sizeof(de))
     {
         if (de.inum == 0)
@@ -454,6 +451,90 @@ int drawCharacterWithBg(window *win, int x, int y, char ch, RGBA color, RGBA bg)
             else
             {
                 drawPointAlpha(t, bg);
+            }
+        }
+    }
+    return CHARACTER_WIDTH;
+}
+
+int drawCharacterWithBgWithScale(window *win, int x, int y, char ch, RGBA color, RGBA bg, int scale)
+{
+    int i, j;
+    RGB *t;
+    int ord = ch - 0x20;
+    if (ord < 0 || ord >= (CHARACTER_NUMBER))
+    {
+        return -1;
+    }
+    for (i = 0; i < CHARACTER_HEIGHT * scale; i++)
+    {
+        if (y + i > win->height)
+        {
+            break;
+        }
+        if (y + i < 0)
+        {
+            continue;
+        }
+        for (j = 0; j < CHARACTER_WIDTH * scale; j++)
+        {
+
+            if (x + j > win->width)
+            {
+                break;
+            }
+            if (x + j < 0)
+            {
+                continue;
+            }
+            t = win->window_buf + (y + i) * win->width + x + j;
+            if (character[ord][i / scale][j / scale] == 1)
+            {
+                drawPointAlpha(t, color);
+            }
+            else
+            {
+                drawPointAlpha(t, bg);
+            }
+        }
+    }
+    return CHARACTER_WIDTH;
+}
+
+int drawCharacterWicthScale(window *win, int x, int y, char ch, RGBA color, int scale)
+{
+    int i, j;
+    RGB *t;
+    int ord = ch - 0x20;
+    if (ord < 0 || ord >= (CHARACTER_NUMBER))
+    {
+        return -1;
+    }
+    for (i = 0; i < CHARACTER_HEIGHT * scale; i++)
+    {
+        if (y + i > win->height)
+        {
+            break;
+        }
+        if (y + i < 0)
+        {
+            continue;
+        }
+        for (j = 0; j < CHARACTER_WIDTH * scale; j++)
+        {
+
+            if (x + j > win->width)
+            {
+                break;
+            }
+            if (x + j < 0)
+            {
+                continue;
+            }
+            t = win->window_buf + (y + i) * win->width + x + j;
+            if (character[ord][i / scale][j / scale] == 1)
+            {
+                drawPointAlpha(t, color);
             }
         }
     }
@@ -736,7 +817,7 @@ void drawTextAreaWidget(window *win, int index)
 
     generateHighlightRGB(w);
     printf(1, "Repaint!!!\n");
-    printf(1,"%s\n",w->context.textArea->text);
+    printf(1, "%s\n", w->context.textArea->text);
 
     int matchIndex[BUF_SIZE];
     int matchNums = 0;
@@ -788,6 +869,7 @@ void drawTextAreaWidget(window *win, int index)
                 break;
             }
         }
+        int scale = w->context.textArea->scale;
 
         if (!isCursor && ((i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index) ||
                           (currentMatchIndex < matchNums && (matchIndex[currentMatchIndex] <= i && i <= matchIndex[currentMatchIndex] + strlen(w->context.textArea->search_text) - 1))))
@@ -796,13 +878,13 @@ void drawTextAreaWidget(window *win, int index)
             {
                 currentMatchIndex++;
             }
-            drawCharacterWithBg(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
-                                ch, color, gray);
+            drawCharacterWithBgWithScale(win, w->size.x + current_x * CHARACTER_WIDTH * scale, w->size.y + current_y * CHARACTER_HEIGHT * scale,
+                                         ch, color, gray, w->context.textArea->scale);
         }
         else
         {
-            drawCharacter(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
-                          ch, color);
+            drawCharacterWicthScale(win, w->size.x + current_x * CHARACTER_WIDTH * scale, w->size.y + current_y * CHARACTER_HEIGHT * scale,
+                                    ch, color, w->context.textArea->scale);
         }
         if (!newline)
         {
@@ -1245,6 +1327,16 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             }
             else
             {
+                if((msg->params[1] &1)==1){
+                    if(msg->params[0]>='a' && msg->params[0]<='z'){
+                        msg->params[0]-=32;
+                    }
+                    else{
+                        if(msg->params[0]){
+                            msg->params[0]= shift_ascii_map[msg->params[0]];
+                        }
+                    }
+                }
                 search_text[strlen(search_text)] = msg->params[0];
             }
             drawTextAreaWidget(win, index);
@@ -1318,6 +1410,16 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             }
             else
             {
+                if((msg->params[1] &1)==1){
+                    if(msg->params[0]>='a' && msg->params[0]<='z'){
+                        msg->params[0]-=32;
+                    }
+                    else{
+                        if(msg->params[0]){
+                            msg->params[0]= shift_ascii_map[msg->params[0]];
+                        }
+                    }
+                }
                 replace_text[strlen(replace_text)] = msg->params[0];
             }
             drawTextAreaWidget(win, index);
@@ -1513,19 +1615,22 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                         w->context.textArea->current_pos -= strlen(command->content);
                     }
 
-                    if(command_stack->stack_pos+1>command_stack->max_stack_pos){
+                    if (command_stack->stack_pos + 1 > command_stack->max_stack_pos)
+                    {
                         break;
                     }
 
-                    struct Command *suc_command = &command_stack->stack[command_stack->stack_pos+1];
-                    if(command->isBatch==1 && suc_command->isBatch==1){
+                    struct Command *suc_command = &command_stack->stack[command_stack->stack_pos + 1];
+                    if (command->isBatch == 1 && suc_command->isBatch == 1)
+                    {
                         continue;
                     }
-                    else{
+                    else
+                    {
                         break;
                     }
                 }
-                printf(1,"%s\n",w->context.textArea->text);
+                printf(1, "%s\n", w->context.textArea->text);
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
@@ -1591,6 +1696,28 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
+            }
+
+            if (msg->params[0] == '=')
+            {
+                w->context.textArea->scale += 1;
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
+            }
+            if (msg->params[0] == '-')
+            {
+                w->context.textArea->scale -= 1;
+                if (w->context.textArea->scale == 0)
+                {
+                    w->context.textArea->scale = 1;
+                }
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
+            }
+            if(msg->params[0]=='s'){
+                win->widgets[1].context.button->onLeftClick(win,1,0);
             }
 
             return;
@@ -1891,6 +2018,7 @@ void fileListDoubleClickHandler(window *win, int index, message *msg)
     }
     if (calcu_index < w->context.fileList->file_num)
     {
+        printf(1,"Invoke!!!\n");
         IconView *p = w->context.fileList->file_list;
         int i;
         for (i = 0; i < calcu_index; i++)
@@ -1941,6 +2069,7 @@ void mainLoop(window *win)
     {
         if (getmessage(win->handler, &msg))
         {
+            printf(1, "MSG: %d\n", msg.msg_type);
             if (msg.msg_type == WM_WINDOW_CLOSE)
             {
                 UI_destroyWindow(win);
@@ -1954,6 +2083,10 @@ void mainLoop(window *win)
                     if (win->widgets[i].type == FILE_LIST)
                     {
                         win->widgets[i].context.fileList->onDoubleClick(win, i, &msg);
+                        win->widgets[i].context.fileList->file_num = 0;
+                        UI_ls(win->widgets[i].context.fileList->path,&win->widgets[i]);
+                        drawFileListWidget(win,i);
+                        updatewindow(win->handler, 0, 0, win->width, win->height);
                         break;
                     }
                 }

@@ -126,6 +126,8 @@ typedef struct TextArea {
     // 0 no 1 search 2 replace
     int isSearching;
 
+    int scale;
+
 } TextArea;
 
 

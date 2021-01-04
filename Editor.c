@@ -9,16 +9,16 @@ char filename[40];
 
 void saveBackBtn(window *win, int index, message* msg) {
     printf(1, "saving\n");
-    int file = open(filename, 1);
+    int file = open(filename, 1 | O_CREATE);
     int i;
     for (i = 0; i < win->widget_number; i++) {
         if (win->widgets[i].type == TEXT_AREA) {
             break;
         }
     }
-    write(file, win->widgets[i].context.textArea->text, 512);
+    int res=write(file, win->widgets[i].context.textArea->text, 512);
     close(file);
-    printf(1, "saved\n");
+    printf(1, "saved Res: %d\n",res);
 }
 
 int main(int argc, char *argv[]) {
