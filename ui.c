@@ -237,6 +237,8 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     t->isCopying = 0;
     t->begin_line = 0;
     t->temp = 0;
+    memset(t->search_text,0,BUF_SIZE);
+    memset(t->replace_text,0,BUF_SIZE);
     strcpy(t->text, text);
     t->onKeyDown = textAreaKeyDownHandler;
     Widget *widget = &win->widgets[win->widget_number];
@@ -717,18 +719,45 @@ void drawTextAreaWidget(window *win, int index)
     generateHighlightRGB(w);
     printf(1, "Repaint!!!");
 
+    int matchIndex[BUF_SIZE];
+    int matchNums = 0;
+
+    if (w->context.textArea->isSearching)
+    {
+        char *text = w->context.textArea->text;
+        char *search_text = w->context.textArea->search_text;
+        for (int i = 0; i <= strlen(text) - strlen(search_text); i++)
+        {
+            int j = 0;
+            for (; j < strlen(search_text); j++)
+            {
+                if (text[i + j] != search_text[j])
+                {
+                    break;
+                }
+            }
+            if (j == strlen(search_text) && j != 0)
+            {
+                matchIndex[matchNums++] = i;
+            }
+        }
+    }
+    int currentMatchIndex = 0;
+    printf(1, "Match Nums: %d", matchNums);
+
     // printf(1,"cursor_line: %d cursor_pos: %d",w->context.textArea->current_line,w->context.textArea->current_pos);
 
     for (i = 0; w->context.textArea->text[i] || (current_x == w->context.textArea->current_pos && current_y == w->context.textArea->current_line); i++)
     {
         char ch = w->context.textArea->text[i];
         int newline = 0;
+        int isCursor = 0;
         struct RGBA color = w->context.textArea->colors[i];
         if (current_x == w->context.textArea->current_pos && current_y == w->context.textArea->current_line)
         {
             ch = 95 + 0x20;
             w->context.textArea->insert_index = i;
-            printf(1, "Draw Cursor!!!\n");
+            isCursor = 1;
             i--;
         }
         else if (w->context.textArea->text[i] == '\n')
@@ -742,8 +771,13 @@ void drawTextAreaWidget(window *win, int index)
             }
         }
 
-        if (i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index && ch != (95 + 0x20))
+        if (!isCursor && ((i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index) ||
+                          (currentMatchIndex < matchNums && (matchIndex[currentMatchIndex] <= i && i <= matchIndex[currentMatchIndex] + strlen(w->context.textArea->search_text) - 1))))
         {
+            if (matchIndex[currentMatchIndex] + strlen(w->context.textArea->search_text) - 1 == i)
+            {
+                currentMatchIndex++;
+            }
             drawCharacterWithBg(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
                                 ch, color, gray);
         }
@@ -1174,6 +1208,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         {
             w->context.textArea->isSearching = 0;
             memset(w->context.textArea->search_text, 0, BUF_SIZE);
+            memset(w->context.textArea->replace_text, 0, BUF_SIZE);
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
@@ -1204,6 +1239,64 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             if (msg->params[0] == '\b')
             {
                 replace_text[strlen(replace_text) - 1] = '\0';
+            }
+            else if (msg->params[0] == 0x9 && (msg->params[1] & 1) == 1)
+            {
+                w->context.textArea->isSearching = 1;
+            }
+            else if (msg->params[0] == '\n')
+            {
+
+                char *text = w->context.textArea->text;
+                char *search_text = w->context.textArea->search_text;
+                while (1)
+                {
+                    int flag=0;
+                    for (int i = 0; i <= strlen(text) - strlen(search_text); i++)
+                    {
+                        int j = 0;
+                        for (; j < strlen(search_text); j++)
+                        {
+                            if (text[i + j] != search_text[j])
+                            {
+                                break;
+                            }
+                        }
+                        if (j == strlen(search_text) && j != 0)
+                        {
+                            flag=1;
+                            int text_len = strlen(text);
+                            for (int k=i; k < text_len - strlen(search_text); k++)
+                            {
+                                w->context.textArea->text[k] = w->context.textArea->text[k + strlen(search_text)];
+                            }
+                            printf(1,"%s\n",text);
+                            for (int k = text_len - strlen(search_text);k<text_len;k++)
+                            {
+                                w->context.textArea->text[k] = '\0';
+                            }
+                            printf(1,"%s\n",text);
+
+                            text_len = strlen(text);
+
+                            for (int k= text_len + strlen(replace_text)-1;k>=i+ strlen(replace_text); k--)
+                            {
+                                w->context.textArea->text[k] = w->context.textArea->text[k - strlen(replace_text)];
+                            }
+                            printf(1,"%s\n",text);
+                            for (int k = i;k<strlen(replace_text);k++)
+                            {
+                                w->context.textArea->text[k] = replace_text[k-i];
+                            }
+
+                            printf(1,"%s\n",text);
+                            break;
+                        }
+                    }
+                    if(!flag){
+                        break;
+                    }
+                }
             }
             else
             {
@@ -1269,8 +1362,6 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         {
             return;
         }
-
-        
 
         // Ctrl
         if ((msg->params[1] & 2) == 2)
