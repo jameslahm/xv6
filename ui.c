@@ -28,6 +28,7 @@ void drawFileListWidget(window *win, int index);
 
 void fileListDoubleClickHandler(window *win, int index, message *msg);
 void textAreaKeyDownHandler(window *win, int index, message *msg);
+void generateHighlightRGB(Widget * w);
 
 char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {
     "txt.bmp",
@@ -201,6 +202,9 @@ int addTextAreaWidget(window *win, RGBA c, char *text, int x, int y, int w, int 
     }
     TextArea *t = malloc(sizeof(TextArea));
     t->color = c;
+    for(int i=0;i<MAX_LONG_STRLEN;i++){
+        t->colors[i] =c;
+    }
     t->current_pos = 0;
     t->current_line = 0;
     t->select_start_index = -2;
@@ -664,9 +668,6 @@ void drawTextAreaWidget(window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
 
-    printf(1, "POS:%d\n", w->context.textArea->current_pos);
-    printf(1, "LINE:%d\n", w->context.textArea->current_line);
-
     RGB white;
     white.R = 255;
     white.G = 255;
@@ -687,16 +688,22 @@ void drawTextAreaWidget(window *win, int index)
     int current_y = 0;
 
     int i;
+
+    generateHighlightRGB(w);
+
     for (i = 0; w->context.textArea->text[i] || (current_x == w->context.textArea->current_pos && current_y == w->context.textArea->current_line); i++)
     {
         char ch = w->context.textArea->text[i];
+        int newline = 0;
         if (current_x == w->context.textArea->current_pos && current_y == w->context.textArea->current_line)
         {
             ch = 95 + 0x20;
+            w->context.textArea->insert_index = i;
             i--;
         }
-        else if (w->context.textArea->text[i] == '\n' || w->context.textArea->text[i] == '\r')
+        else if (w->context.textArea->text[i] == '\n')
         {
+            newline=1;
             current_y++;
             current_x = 0;
             if (current_y >= max_line)
@@ -708,14 +715,16 @@ void drawTextAreaWidget(window *win, int index)
         if (i >= w->context.textArea->select_start_index && i <= w->context.textArea->select_end_index && ch != (95 + 0x20))
         {
             drawCharacterWithBg(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
-                                ch, w->context.textArea->color, gray);
+                                ch, w->context.textArea->colors[i], gray);
         }
         else
         {
             drawCharacter(win, w->size.x + current_x * CHARACTER_WIDTH, w->size.y + current_y * CHARACTER_HEIGHT,
-                          ch, w->context.textArea->color);
+                          ch, w->context.textArea->colors[i]);
         }
-        current_x++;
+        if(!newline){
+            current_x++;
+        }
         if (current_x >= max_num)
         {
             current_x = 0;
@@ -853,6 +862,246 @@ int max(int a, int b)
     return a > b ? a : b;
 }
 
+void generateHighlightRGB(Widget * w)
+{
+    char* text = w->context.textArea->text;
+    int len = strlen(text);
+    RGBA* colors = w->context.textArea->colors;
+
+    struct RGBA red = (struct RGBA){180,20,20,255};
+    
+    
+    for (int i = 0; i <  len && text[i]; i++)
+    {
+        // printf(1, "\e[1;30m%d%d%d\e[0;32m| \e[0m", (i + 1) / 100, (i + 1) % 100 / 10, (i + 1) % 10);
+        // find next \n
+        if(text[i]=='\n'){
+            continue;
+        }
+
+        int newlineIndex=len;
+        for(int j=i;j<len;j++){
+            if(text[j]=='\n'){
+                newlineIndex=j;
+                break;
+            }
+        }
+
+        // annotation
+        if (text[i] == '/' && text[i+1] == '/')
+        {
+            for(int j=i;j<newlineIndex;j++){
+                colors[j]= (struct RGBA){120,120,120,255};
+                i++;
+            }
+            continue;
+        }
+
+        while (i<newlineIndex)
+        {
+            // numbers
+            if (text[i] >= '0' && text[i] <= '9')
+            {
+                colors[i]=(struct RGBA){60,120,120,255};
+                i+=1;
+            }
+
+            // string
+            // TODO: fix possible segement fault
+            else if (text[i] == '"')
+            {
+                int start = i;
+                int end = i+1;
+                for (; text[end] != '"' && text[end] != '\0'; end++)
+                    ;
+                for (int i = start; i <= end; i++)
+                {
+                    colors[i] = (struct RGBA){10,120,120,255};
+                }
+                i = end;
+            }
+
+            // single char
+            else if (text[i] == '\'')
+            {
+                if (i + 1 < len)
+                    colors[i+1] = (struct RGBA){10,10,120,255};
+                if (i + 2 < len)
+                    colors[i+2] = (struct RGBA){10,10,120,255};
+                i += 3;
+            }
+
+            // int
+            else if ((len - i) >= 3 && text[i] == 'i' && text[i+1] == 'n' && text[i+2]== 't')
+            {
+                colors[i] = (struct RGBA){10,10,120,255};
+                colors[i+1] = (struct RGBA){10,10,120,255};
+                colors[i+2] = (struct RGBA){10,10,120,255};
+                i += 3;
+            }
+
+            // long
+            else if ((len - i) >= 4 && text[i] == 'l' && text[i+1]== 'o' && text[i+2]== 'n' && text[i+3]== 'g')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                i += 4;
+            }
+
+            // double
+            else if ((len - i) >= 6 && text[i] == 'd' && text[i+1]== 'o' && text[i+2]== 'u' && text[i+3] == 'b' && text[i+4]== 'l' && text[i+ 5] == 'e')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                colors[i+5] = (struct RGBA){10,10,10,255};
+                i += 6;
+            }
+
+            // float
+            else if ((len - i) >= 5 && text[i] == 'f' && text[i + 1] == 'l' && text[i + 2] == 'o' && text[i + 3] == 'a' && text[i + 4] == 't')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                i += 5;
+            }
+
+            // char
+            else if ((len - i) >= 4 && text[i] == 'c' && text[i + 1] == 'h' && text[i + 2] == 'a' && text[i + 3] == 'r')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                i += 4;
+            }
+
+            // if
+            else if ((len - i) >= 2 && text[i] == 'i' && text[i + 1] == 'f')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                i += 2;
+            }
+
+            // else
+            else if ((len - i) >= 4 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                i += 4;
+            }
+
+            // else if
+            else if ((len - i) >= 7 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e' && text[i + 4] == ' ' && text[i + 5] == 'i' && text[i + 6] == 'f')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                colors[i+5] = (struct RGBA){10,10,10,255};
+                colors[i+6] = (struct RGBA){10,10,10,255};
+                i += 7;
+            }
+
+            // for
+            else if ((len - i) >= 3 && text[i] == 'f' && text[i + 1] == 'o' && text[i + 2] == 'r')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                i += 3;
+            }
+
+            // while
+            else if ((len - i) >= 5 && text[i] == 'w' && text[i + 1] == 'h' && text[i + 2] == 'i' && text[i + 3] == 'l' && text[i + 4] == 'e')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                i += 5;
+            }
+
+            // static
+            else if ((len - i) >= 6 && text[i] == 's' && text[i + 1] == 't' && text[i + 2] == 'a' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'c')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                i += 6;
+            }
+
+            // const
+            else if ((len - i) >= 5 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 's' && text[i + 4] == 't')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                i +=5;
+            }
+
+            else if ((len - i) >= 8 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'n' && text[i + 6] == 'u' && text[i + 7] == 'e')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                colors[i+5] = (struct RGBA){10,10,10,255};
+                colors[i+6] = (struct RGBA){10,10,10,255};
+                colors[i+7] = (struct RGBA){10,10,10,255};
+                i += 8;
+            }
+
+            else if ((len - i) >= 6 && text[i] == 'r' && text[i + 1]== 'e' && text[i + 2] == 't' && text[i + 3] == 'u' && text[i + 4] == 'r' && text[i + 5] == 'n')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                colors[i+5] = (struct RGBA){10,10,10,255};
+                i += 6;
+            }
+
+            else if ((len - i) >= 5 && text[i] == 'b' && text[i + 1] == 'r' && text[i + 2] == 'e' && text[i + 3] == 'a' && text[i + 4] == 'k')
+            {
+                colors[i] = (struct RGBA){10,10,10,255};
+                colors[i+1] = (struct RGBA){10,10,10,255};
+                colors[i+2] = (struct RGBA){10,10,10,255};
+                colors[i+3] = (struct RGBA){10,10,10,255};
+                colors[i+4] = (struct RGBA){10,10,10,255};
+                i += 5;
+            }
+
+            else
+            {
+                i += 1;
+            }
+        }
+    }
+}
+
+// Attention
+// msg->params[1] & 2 == 2 Ctrl
+// msg->params[1] & 1 == 1 Shift
+
 void textAreaKeyDownHandler(window *win, int index, message *msg)
 {
     Widget *w = &(win->widgets[index]);
@@ -867,10 +1116,16 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
     if (msg->msg_type == M_KEY_DOWN)
     {
 
-        printf(1, "DEBUG %x\n", msg->params[0]);
+        // printf(1, "DEBUG %x\n", msg->params[0]);
 
         if (msg->params[0] == '\b')
         {
+            if(len<1){
+                return;
+            }
+            for(int i=w->context.textArea->insert_index-1;i<len-1;i++){
+                w->context.textArea->text[i]=w->context.textArea->text[i+1];
+            }
             w->context.textArea->text[len - 1] = '\0';
 
             if (current_pos >= 1)
@@ -881,8 +1136,23 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             {
                 if (current_line >= 1)
                 {
-                    w->context.textArea->current_line--;
-                    w->context.textArea->current_pos = max_num - 1;
+
+                    // w->context.textArea->current_line--;
+                    // w->context.textArea->current_pos = max_num - 1;
+                    int current_line=0;
+                    int current_pos = 0;
+                    for(int i=0;i<w->context.textArea->insert_index-1;i++){
+                        if(w->context.textArea->text[i]=='\n'){
+                            current_line++;
+                            current_pos=0;
+                        }
+                        else{
+                            current_pos++;
+                        }
+                    }
+                    w->context.textArea->current_line=current_line;
+                    w->context.textArea->current_pos = current_pos;
+
                 }
             }
 
@@ -905,18 +1175,21 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 w->context.textArea->copy_start_index = w->context.textArea->select_start_index;
                 w->context.textArea->copy_end_index = w->context.textArea->select_end_index;
                 int copyTextLength = w->context.textArea->copy_end_index - w->context.textArea->copy_start_index + 1;
-                if(w->context.textArea->temp!=0)free(w->context.textArea->temp);
-                w->context.textArea->temp = (char*)malloc(copyTextLength);
-                for(int i=0;i<copyTextLength;i++){
-                    w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index +i];
+                if (w->context.textArea->temp != 0)
+                    free(w->context.textArea->temp);
+                w->context.textArea->temp = (char *)malloc(copyTextLength);
+                for (int i = 0; i < copyTextLength; i++)
+                {
+                    w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index + i];
                 }
             }
             if (msg->params[0] == 'v')
             {
-                if(w->context.textArea->isCopying==0){
+                if (w->context.textArea->isCopying == 0)
+                {
                     return;
                 }
-                printf(1,"START: %d",w->context.textArea->copy_start_index);
+                printf(1, "START: %d", w->context.textArea->copy_start_index);
                 int copyTextLength = w->context.textArea->copy_end_index - w->context.textArea->copy_start_index + 1;
                 for (int i = len + copyTextLength - 1; i >= current_line * max_num + current_pos + copyTextLength; i--)
                 {
@@ -927,7 +1200,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     int j = i - current_line * max_num - current_pos;
                     w->context.textArea->text[i] = w->context.textArea->temp[j];
-                    printf(1,"%d:%c\n",i,w->context.textArea->temp[j]);
+                    printf(1, "%d:%c\n", i, w->context.textArea->temp[j]);
                 }
 
                 // w->context.textArea->copy_start_index = w->context.textArea->copy_end_index = -2;
@@ -938,28 +1211,51 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
             }
-            if(msg->params[0]=='a'){
+            if (msg->params[0] == 'a')
+            {
                 w->context.textArea->isCopying = 1;
                 w->context.textArea->select_start_index = 0;
-                w->context.textArea->select_end_index = len-1;
+                w->context.textArea->select_end_index = len - 1;
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
             }
-            if(msg->params[0]=='x'){
+            if (msg->params[0] == 'x')
+            {
                 w->context.textArea->isCopying = 1;
                 w->context.textArea->copy_start_index = w->context.textArea->select_start_index;
                 w->context.textArea->copy_end_index = w->context.textArea->select_end_index;
                 int copyTextLength = w->context.textArea->copy_end_index - w->context.textArea->copy_start_index + 1;
-                if(w->context.textArea->temp!=0)free(w->context.textArea->temp);
-                w->context.textArea->temp = (char*)malloc(copyTextLength);
-                for(int i=0;i<copyTextLength;i++){
-                    w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index +i];
+                if (w->context.textArea->temp != 0)
+                    free(w->context.textArea->temp);
+                w->context.textArea->temp = (char *)malloc(copyTextLength);
+                for (int i = 0; i < copyTextLength; i++)
+                {
+                    w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index + i];
                 }
-                for(int i=w->context.textArea->copy_start_index;i< len - copyTextLength;i++){
-                    w->context.textArea->text[i] = w->context.textArea->text[i+copyTextLength];
+                for (int i = w->context.textArea->copy_start_index; i < len - copyTextLength; i++)
+                {
+                    w->context.textArea->text[i] = w->context.textArea->text[i + copyTextLength];
                 }
-                w->context.textArea->text[len - copyTextLength] ='\0';
+                w->context.textArea->text[len - copyTextLength] = '\0';
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
+            }
+
+            if (msg->params[0] == KEY_HOME)
+            {
+                w->context.textArea->current_line = 0;
+                w->context.textArea->current_pos = 0;
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
+            }
+
+            if (msg->params[0] == KEY_END)
+            {
+                w->context.textArea->current_line = len / max_num;
+                w->context.textArea->current_pos = len % max_num;
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
@@ -1165,20 +1461,35 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             return;
         }
 
+        // shift key map
+        if(msg->params[0]>=48 && msg->params[0]<=57 && (msg->params[1] & 1) ==1){
+            msg->params[0] -= 17;
+        }
+        if(msg->params[0]>=91 && msg->params[0]<=93 && (msg->params[1] & 1) ==1){
+            msg->params[0] +=32;
+        }
+
+
         if (msg->params[0] == 0)
         {
             return;
         }
 
-        for (int i = len; i >= (current_line * max_num + current_pos + 1); i--)
+        // for (int i = len; i >= (current_line * max_num + current_pos + 1); i--)
+        // {
+        //     w->context.textArea->text[i] = w->context.textArea->text[i - 1];
+        // }
+        // w->context.textArea->text[(current_line * max_num + current_pos)] = msg->params[0];
+
+        for (int i = len; i >= (w->context.textArea->insert_index + 1); i--)
         {
             w->context.textArea->text[i] = w->context.textArea->text[i - 1];
         }
-        w->context.textArea->text[(current_line * max_num + current_pos)] = msg->params[0];
+        w->context.textArea->text[w->context.textArea->insert_index] = msg->params[0];
 
         w->context.textArea->text[len + 1] = '\0';
 
-        if (current_pos < max_num - 1)
+        if (current_pos < max_num - 1 && msg->params[0]!='\n')
         {
             w->context.textArea->current_pos++;
         }
@@ -1187,6 +1498,8 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             w->context.textArea->current_line++;
             w->context.textArea->current_pos = 0;
         }
+
+
         drawTextAreaWidget(win, index);
         updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
     }

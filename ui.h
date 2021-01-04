@@ -69,22 +69,28 @@ typedef struct TextArea {
     int begin_line;
     int current_line;
     int current_pos;
+    int insert_index;
 
     // for select
     int select_start_index;
     int select_end_index;
 
+    // copied select index
     int copy_start_index;
     int copy_end_index;
 
+    // copied text
     char* temp;
 
+    // has copied text
     int isCopying;
 
     struct RGBA color;
     char text[MAX_LONG_STRLEN];
     Handler onKeyDown;
     Handler onLeftClick;
+
+    struct RGBA colors[MAX_LONG_STRLEN];
 } TextArea;
 
 typedef struct IconView {
