@@ -118,6 +118,13 @@ typedef struct TextArea {
 
     struct CommandStack command_stack;
 
+    char search_text[BUF_SIZE];
+
+    char replace_text[BUF_SIZE];
+
+    // 0 no 1 search 2 replace
+    int isSearching;
+
 } TextArea;
 
 

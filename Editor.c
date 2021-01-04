@@ -41,8 +41,9 @@ int main(int argc, char *argv[]) {
         file = open(argv[1], 0);
         strcpy(filename, argv[1]);
     } else {
-        strcpy(filename, "new.txt");
+        strcpy(filename, "Untitled.txt");
     }
+
     int panel = addTextAreaWidget(&editor, black, "", 0, 0, 770, 540);
     addButtonWidget(&editor, black, red, "save", saveBackBtn, 720, 540, 80, 50);
     if (file >= 0) {
