@@ -6,7 +6,7 @@
 - [x] Ctrl-C Ctrl-V
 - [x] Ctrl-A
 - [x] Ctrl-x
-- [ ] highlight
+- [x] highlight
 - [ ] Ctrl-Z Ctrl-Shift-Z
 - [ ] Ctrl-S
 - [x] Ctrl-Home
