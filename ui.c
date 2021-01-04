@@ -30,6 +30,31 @@ void fileListDoubleClickHandler(window *win, int index, message *msg);
 void textAreaKeyDownHandler(window *win, int index, message *msg);
 void generateHighlightRGB(Widget * w);
 
+void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content,char *old_content)
+{
+    if (type == ADD)
+    {
+        command_stack->stack[++command_stack->stack_pos].type = ADD;
+        command_stack->stack[command_stack->stack_pos].index = index;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = buf;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+    if (type == DEL)
+    {
+        command_stack->stack[++command_stack->stack_pos].type = DEL;
+        command_stack->stack[command_stack->stack_pos].index = index;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = buf;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+}
+
+
 char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {
     "txt.bmp",
     "pic.bmp",
@@ -867,9 +892,6 @@ void generateHighlightRGB(Widget * w)
     char* text = w->context.textArea->text;
     int len = strlen(text);
     RGBA* colors = w->context.textArea->colors;
-
-    struct RGBA red = (struct RGBA){180,20,20,255};
-    
     
     for (int i = 0; i <  len && text[i]; i++)
     {
@@ -1123,6 +1145,10 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             if(len<1){
                 return;
             }
+            int insert_index = w->context.textArea->insert_index;
+            char temp[2]={0};
+            temp[0] = w->context.textArea->text[insert_index-1];
+            push_command(&w->context.textArea->command_stack,DEL,insert_index-1,temp,0);
             for(int i=w->context.textArea->insert_index-1;i<len-1;i++){
                 w->context.textArea->text[i]=w->context.textArea->text[i+1];
             }

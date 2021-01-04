@@ -7,6 +7,8 @@ struct window;
 #define MAX_WIDTH 800
 #define MAX_HEIGHT 600
 
+#define BUF_SIZE 100
+
 #define MAX_WIDGET 10
 #define MAX_SHORT_STRLEN 20
 #define MAX_LONG_STRLEN 512
@@ -44,6 +46,28 @@ typedef struct widget_size {
 typedef struct Image {
     struct RGB *image;
 } Image;
+
+// only command stack
+enum CommandType
+{
+    ADD,
+    DEL
+};
+
+struct Command
+{
+    enum CommandType type;
+    int index;
+    char *content;
+    char *old_content;
+};
+
+struct CommandStack
+{
+    struct Command stack[MAX_LONG_STRLEN];
+    int stack_pos;
+    int max_stack_pos;
+};
 
 typedef struct Label {
     struct RGBA color;
@@ -91,7 +115,11 @@ typedef struct TextArea {
     Handler onLeftClick;
 
     struct RGBA colors[MAX_LONG_STRLEN];
+
+    struct CommandStack command_stack;
+
 } TextArea;
+
 
 typedef struct IconView {
     RGBA *image;
