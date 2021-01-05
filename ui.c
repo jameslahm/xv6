@@ -387,7 +387,6 @@ int addFileListWidget(window *win, char *path, int direction, int x, int y, int 
             return -1;
         }
     }
-    // TODO: set default handler
     f->onDoubleClick = fileListDoubleClickHandler;
     Widget *widget = &win->widgets[win->widget_number];
     widget->paint = drawFileListWidget;
