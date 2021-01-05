@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
     black.R = 0;
     black.G = 0;
     black.B = 0;
-    RGBA red;
-    red.A = 255;
-    red.R = 211;
-    red.G = 80;
-    red.B = 80;
+    // RGBA red;
+    // red.A = 255;
+    // red.R = 211;
+    // red.G = 80;
+    // red.B = 80;
     window editor;
     editor.width = 770;
     editor.height = 570;
@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
         strcpy(filename, "Untitled.txt");
     }
 
-    int panel = addTextAreaWidget(&editor, black, "", 0, 0, 770, 540);
-    addButtonWidget(&editor, black, red, "save", saveBackBtn, 720, 540, 80, 50);
+    int panel = addTextAreaWidget(&editor, black, "", 0, 0, 770, 570);
+    // addButtonWidget(&editor, black, red, "save", saveBackBtn, 720, 540, 80, 50);
     if (file >= 0) {
         read(file, editor.widgets[panel].context.textArea->text, 512);
         close(file);

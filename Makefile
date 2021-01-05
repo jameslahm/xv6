@@ -164,6 +164,12 @@ UPROGS=\
 	_init\
 	_desktop\
 	_Editor\
+	_echo\
+	_grep\
+	_init\
+	_mkdir\
+	_rm\
+	_wc\
 
 fs.img: mkfs README readme.txt desktop.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)
 	./mkfs fs.img README readme.txt desktop.bmp txt.bmp pic.bmp exec.bmp folder.bmp unknown.bmp $(UPROGS)

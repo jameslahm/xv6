@@ -924,7 +924,7 @@ void drawTextAreaWidget(window *win, int index)
 
     if (w->context.textArea->isInTerminal)
     {
-        drawRect(win, black, 0, 440, 769, 100);
+        drawRect(win, black, 0, 440, 769, 130);
         char *cmd = w->context.textArea->cmd;
         char *cmd_res = w->context.textArea->cmd_res;
         int current_x = 0;
@@ -1504,7 +1504,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 }
                 memset(cmd,0,BUF_SIZE);
                 printf(1,"Cmd Res: %s",cmd_res);
-                printf(1,"Cmd: ",cmd);
+                printf(1,"Cmd: \n",cmd);
             }
             else{
                 if ((msg->params[1] & 1) == 1)
