@@ -24,10 +24,10 @@ char shift_ascii_map[128] =
         [0x30] 0x29, [0x31] 0x21, [0x32] 0x40, [0x33] 0x23, [0x34] 0x24, [0x35] 0x25, [0x36] 0x5E, [0x37] 0x26, [0x38] 0x2A, [0x39] 0x28, [0x2D] 0x5F, [0x3D] 0x2B, [0x5B] 0x7B, [0x5D] 0x7D, [0x5C] 0x7C, [0x3B] 0x3A, [0x27] 0x22, [0x2F] 0x3F, [0x2C] 0x3C, [0x2E] 0x3E, [0x60] 0x7E};
 
 struct RGBA brown = {87, 144, 111, 255};
-struct RGBA green = {185,198,190,255};
-struct RGBA blue = {175,147,113,255};
-struct RGBA pink = {184,138,185,255};
-struct RGBA orange = {141,149,186,255};
+struct RGBA green = {185, 198, 190, 255};
+struct RGBA blue = {175, 147, 113, 255};
+struct RGBA pink = {184, 138, 185, 255};
+struct RGBA orange = {141, 149, 186, 255};
 
 void drawImageWidget(window *win, int index);
 void drawLabelWidget(window *win, int index);
@@ -298,7 +298,12 @@ void UI_ls(char *path, Widget *widget)
     *p++ = '/';
     if (widget->context.fileList->file_list)
     {
-        free(widget->context.fileList->file_list);
+        IconView *node = widget->context.fileList->file_list;
+        for(int i=0;i<widget->context.fileList->file_num;i++){
+            IconView *tmp = node->next;
+            free(node);
+            node = tmp;
+        }
         widget->context.fileList->file_list = 0;
     }
     printf(1, "FileList: %d\n", widget->context.fileList->file_list);
@@ -315,6 +320,7 @@ void UI_ls(char *path, Widget *widget)
             continue;
         }
         tmpName = UI_fmtname(buf);
+        printf(1,"%s\n",tmpName);
         if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0)
         {
             continue;
@@ -935,14 +941,17 @@ void drawTextAreaWidget(window *win, int index)
         char *cmd_res = w->context.textArea->cmd_res;
         int current_x = 0;
         int current_y = 0;
-        for(int i=0;i<strlen(cmd_res);i++){
-            if(cmd_res[i]=='\n'){
+        for (int i = 0; i < strlen(cmd_res); i++)
+        {
+            if (cmd_res[i] == '\n')
+            {
                 current_y++;
-                current_x=0;
+                current_x = 0;
             }
-            else{
+            else
+            {
                 drawCharacter(win, 1 + CHARACTER_WIDTH * (current_x), 441 + CHARACTER_HEIGHT * current_y,
-                      cmd_res[i], blackA);
+                              cmd_res[i], blackA);
                 current_x++;
             }
         }
@@ -950,9 +959,10 @@ void drawTextAreaWidget(window *win, int index)
                       '>', blackA);
         drawCharacter(win, 1 + CHARACTER_WIDTH, 441 + current_y * CHARACTER_HEIGHT,
                       '>', blackA);
-        for(int i=0;i<strlen(cmd);i++){
-            drawCharacter(win, 1 + CHARACTER_WIDTH * (i+2), 441+ current_y * CHARACTER_HEIGHT,
-                      cmd[i], blackA);
+        for (int i = 0; i < strlen(cmd); i++)
+        {
+            drawCharacter(win, 1 + CHARACTER_WIDTH * (i + 2), 441 + current_y * CHARACTER_HEIGHT,
+                          cmd[i], blackA);
         }
     }
 }
@@ -1087,7 +1097,8 @@ void generateHighlightRGB(Widget *w)
     char *text = w->context.textArea->text;
     int len = strlen(text);
     RGBA *colors = w->context.textArea->colors;
-    for (int i =0 ;i<len;i++){
+    for (int i = 0; i < len; i++)
+    {
         colors[i] = w->context.textArea->color;
     }
 
@@ -1154,7 +1165,7 @@ void generateHighlightRGB(Widget *w)
                     colors[i + 2] = orange;
                 i += 3;
             }
-            
+
             // int
             else if ((len - i) >= 3 && text[i] == 'i' && text[i + 1] == 'n' && text[i + 2] == 't')
             {
@@ -1266,7 +1277,7 @@ void generateHighlightRGB(Widget *w)
                 colors[i + 2] = pink;
                 colors[i + 3] = pink;
                 colors[i + 4] = pink;
-                colors[i+5] = pink;
+                colors[i + 5] = pink;
                 i += 6;
             }
 
@@ -1348,7 +1359,9 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             w->context.textArea->isInTerminal = 0;
             memset(w->context.textArea->search_text, 0, BUF_SIZE);
             memset(w->context.textArea->replace_text, 0, BUF_SIZE);
-            memset(w->context.textArea->cmd,0,BUF_SIZE);
+            memset(w->context.textArea->cmd, 0, BUF_SIZE);
+            w->context.textArea->select_start_index = -2;
+            w->context.textArea->select_end_index = -2;
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
@@ -1474,18 +1487,23 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
         }
-        if(w->context.textArea->isInTerminal){
+        if (w->context.textArea->isInTerminal)
+        {
             char *cmd = w->context.textArea->cmd;
             char *cmd_res = w->context.textArea->cmd_res;
-            if(msg->params[0]=='\b'){
-                cmd[strlen(cmd)-1]='\0';
+            if (msg->params[0] == '\b')
+            {
+                cmd[strlen(cmd) - 1] = '\0';
             }
-            else if(msg->params[0]=='\n'){
+            else if (msg->params[0] == '\n')
+            {
                 int p[2];
-                if(pipe(p)<0){
-                    printf(1,"Pipe Error\n");        
+                if (pipe(p) < 0)
+                {
+                    printf(1, "Pipe Error\n");
                 }
-                if(fork1()==0){
+                if (fork1() == 0)
+                {
                     close(1);
                     close(2);
                     dup(p[1]);
@@ -1498,24 +1516,27 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 }
                 close(p[1]);
                 wait();
-                printf(1,"Complete!!!\n");
+                printf(1, "Complete!!!\n");
 
                 cmd_res[strlen(cmd_res)] = '>';
                 cmd_res[strlen(cmd_res)] = '>';
-                strcpy(cmd_res + strlen(cmd_res),cmd);
-                cmd_res[strlen(cmd_res)]='\n';
+                strcpy(cmd_res + strlen(cmd_res), cmd);
+                cmd_res[strlen(cmd_res)] = '\n';
                 char c;
                 int i = strlen(cmd_res);
-                while(1){
-                    int cc= read(p[0],&c,1);
-                    if(cc<1) break;
+                while (1)
+                {
+                    int cc = read(p[0], &c, 1);
+                    if (cc < 1)
+                        break;
                     cmd_res[i++] = c;
                 }
-                memset(cmd,0,BUF_SIZE);
-                printf(1,"Cmd Res: %s",cmd_res);
-                printf(1,"Cmd: \n",cmd);
+                memset(cmd, 0, BUF_SIZE);
+                printf(1, "Cmd Res: %s", cmd_res);
+                printf(1, "Cmd: \n", cmd);
             }
-            else{
+            else
+            {
                 if ((msg->params[1] & 1) == 1)
                 {
                     if (msg->params[0] >= 'a' && msg->params[0] <= 'z')
@@ -1927,6 +1948,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         // Up Down Left Right
         if (msg->params[0] == KEY_LF)
         {
+            int insert_index = w->context.textArea->insert_index;
             if (current_pos >= 1)
             {
                 w->context.textArea->current_pos--;
@@ -1936,7 +1958,17 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 if (current_line >= 1)
                 {
                     w->context.textArea->current_line--;
-                    w->context.textArea->current_pos = max_num - 1;
+                    int beforeNewline = 0;
+                    for (int i = insert_index - 2; i >= 0; i--)
+                    {
+                        if (w->context.textArea->text[i] == '\n')
+                        {
+                            break;
+                        }
+                        beforeNewline++;
+                    }
+
+                    w->context.textArea->current_pos = beforeNewline;
                 }
             }
             if ((msg->params[1] & 1) == 1)
@@ -1950,13 +1982,13 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 }
                 else
                 {
-                    if (w->context.textArea->select_start_index == insert_index)
+                    if (w->context.textArea->select_start_index < insert_index)
                     {
-                        w->context.textArea->select_start_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos;
+                        w->context.textArea->select_end_index -= 1;    
                     }
                     else
                     {
-                        w->context.textArea->select_end_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos - 1;
+                        w->context.textArea->select_start_index -=1;
                     }
                 }
             }
@@ -1972,10 +2004,11 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
         if (msg->params[0] == KEY_RT)
         {
+            char *text = w->context.textArea->text;
             int insert_index = w->context.textArea->insert_index;
             if ((insert_index) < len)
             {
-                if (current_pos == max_num - 1)
+                if (text[insert_index] == '\n')
                 {
                     w->context.textArea->current_line++;
                     w->context.textArea->current_pos = 0;
@@ -1994,14 +2027,15 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 }
                 else
                 {
-                    if (w->context.textArea->select_start_index == insert_index)
+                    if (w->context.textArea->select_start_index < insert_index)
                     {
-                        w->context.textArea->select_start_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos;
+                        w->context.textArea->select_end_index += 1;    
                     }
                     else
                     {
-                        w->context.textArea->select_end_index = w->context.textArea->current_line * max_num + w->context.textArea->current_pos - 1;
+                        w->context.textArea->select_start_index +=1;
                     }
+                    
                 }
             }
             else
@@ -2285,7 +2319,7 @@ void mainLoop(window *win)
                         win->widgets[i].context.fileList->onDoubleClick(win, i, &msg);
                         win->widgets[i].context.fileList->file_num = 0;
                         UI_ls(win->widgets[i].context.fileList->path, &win->widgets[i]);
-                        drawFileListWidget(win, i);
+                        drawAllWidget(win);
                         updatewindow(win->handler, 0, 0, win->width, win->height);
                         break;
                     }
