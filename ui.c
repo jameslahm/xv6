@@ -299,7 +299,8 @@ void UI_ls(char *path, Widget *widget)
     if (widget->context.fileList->file_list)
     {
         IconView *node = widget->context.fileList->file_list;
-        for(int i=0;i<widget->context.fileList->file_num;i++){
+        for (int i = 0; i < widget->context.fileList->file_num; i++)
+        {
             IconView *tmp = node->next;
             free(node);
             node = tmp;
@@ -320,7 +321,7 @@ void UI_ls(char *path, Widget *widget)
             continue;
         }
         tmpName = UI_fmtname(buf);
-        printf(1,"%s\n",tmpName);
+        printf(1, "%s\n", tmpName);
         if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0)
         {
             continue;
@@ -1564,44 +1565,88 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             {
                 return;
             }
-            int insert_index = w->context.textArea->insert_index;
-            char temp[2] = {0};
-            temp[0] = w->context.textArea->text[insert_index - 1];
-            push_command(&w->context.textArea->command_stack, DEL, insert_index - 1, temp, 0, 0);
-            for (int i = w->context.textArea->insert_index - 1; i < len - 1; i++)
-            {
-                w->context.textArea->text[i] = w->context.textArea->text[i + 1];
-            }
-            w->context.textArea->text[len - 1] = '\0';
 
-            if (current_pos >= 1)
+            if (w->context.textArea->select_start_index < 0)
             {
-                w->context.textArea->current_pos--;
-            }
-            else
-            {
-                if (current_line >= 1)
+
+                int insert_index = w->context.textArea->insert_index;
+                char temp[2] = {0};
+                temp[0] = w->context.textArea->text[insert_index - 1];
+                push_command(&w->context.textArea->command_stack, DEL, insert_index - 1, temp, 0, 0);
+                for (int i = w->context.textArea->insert_index - 1; i < len - 1; i++)
                 {
-
-                    // w->context.textArea->current_line--;
-                    // w->context.textArea->current_pos = max_num - 1;
-                    int current_line = 0;
-                    int current_pos = 0;
-                    for (int i = 0; i < w->context.textArea->insert_index - 1; i++)
-                    {
-                        if (w->context.textArea->text[i] == '\n')
-                        {
-                            current_line++;
-                            current_pos = 0;
-                        }
-                        else
-                        {
-                            current_pos++;
-                        }
-                    }
-                    w->context.textArea->current_line = current_line;
-                    w->context.textArea->current_pos = current_pos;
+                    w->context.textArea->text[i] = w->context.textArea->text[i + 1];
                 }
+                w->context.textArea->text[len - 1] = '\0';
+
+                if (current_pos >= 1)
+                {
+                    w->context.textArea->current_pos--;
+                }
+                else
+                {
+                    if (current_line >= 1)
+                    {
+
+                        // w->context.textArea->current_line--;
+                        // w->context.textArea->current_pos = max_num - 1;
+                        int current_line = 0;
+                        int current_pos = 0;
+                        for (int i = 0; i < w->context.textArea->insert_index - 1; i++)
+                        {
+                            if (w->context.textArea->text[i] == '\n')
+                            {
+                                current_line++;
+                                current_pos = 0;
+                            }
+                            else
+                            {
+                                current_pos++;
+                            }
+                        }
+                        w->context.textArea->current_line = current_line;
+                        w->context.textArea->current_pos = current_pos;
+                    }
+                }
+            }
+            else{
+                int selectTextLength = w->context.textArea->select_end_index - w->context.textArea->select_start_index +1;
+                int newLineNumbers = 0;
+                int leftPos = 0;
+                char temp[BUF_SIZE];
+                memset(temp,0,BUF_SIZE);
+                for (int i = w->context.textArea->select_start_index - 1; i >= 0; i--)
+                {
+                    if (w->context.textArea->text[i] == '\n')
+                    {
+                        break;
+                    }
+                    leftPos++;
+                }
+                for (int i = 0; i < selectTextLength; i++)
+                {
+                    temp[i] = w->context.textArea->text[w->context.textArea->select_start_index + i];
+                    if (temp[i] == '\n')
+                    {
+                        newLineNumbers++;
+                    }
+                }
+                push_command(&w->context.textArea->command_stack, DEL, w->context.textArea->select_start_index, temp, 0, 0);
+                for (int i = w->context.textArea->select_start_index; i < len - selectTextLength; i++)
+                {
+                    w->context.textArea->text[i] = w->context.textArea->text[i + selectTextLength];
+                }
+
+                if(w->context.textArea->insert_index>w->context.textArea->select_end_index){
+                    w->context.textArea->current_line -= newLineNumbers;
+                }
+                w->context.textArea->current_pos = leftPos;
+                printf(1, "current_line: %d current_pos: %d", w->context.textArea->current_line, w->context.textArea->current_pos);
+
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
+
+                w->context.textArea->text[len - selectTextLength] = '\0';
             }
 
             drawTextAreaWidget(win, index);
@@ -1716,7 +1761,9 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     w->context.textArea->text[i] = w->context.textArea->text[i + copyTextLength];
                 }
 
-                w->context.textArea->current_line -= newLineNumbers;
+                if(w->context.textArea->insert_index>w->context.textArea->select_end_index){
+                    w->context.textArea->current_line -= newLineNumbers;
+                }
                 w->context.textArea->current_pos = leftPos;
                 printf(1, "current_line: %d current_pos: %d", w->context.textArea->current_line, w->context.textArea->current_pos);
 
@@ -1984,11 +2031,11 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     if (w->context.textArea->select_start_index < insert_index)
                     {
-                        w->context.textArea->select_end_index -= 1;    
+                        w->context.textArea->select_end_index -= 1;
                     }
                     else
                     {
-                        w->context.textArea->select_start_index -=1;
+                        w->context.textArea->select_start_index -= 1;
                     }
                 }
             }
@@ -2029,13 +2076,12 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     if (w->context.textArea->select_start_index < insert_index)
                     {
-                        w->context.textArea->select_end_index += 1;    
+                        w->context.textArea->select_end_index += 1;
                     }
                     else
                     {
-                        w->context.textArea->select_start_index +=1;
+                        w->context.textArea->select_start_index += 1;
                     }
-                    
                 }
             }
             else
