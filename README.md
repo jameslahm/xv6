@@ -14,3 +14,5 @@
 - [x] Ctrl-F
 - [x] Ctrl++
 - [x] Ctrl+-
+- [x] Terminal
+- [x] Batch delete
