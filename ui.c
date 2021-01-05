@@ -1510,6 +1510,9 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 int insert_index = w->context.textArea->insert_index;
                 int copyTextLength = w->context.textArea->copy_end_index - w->context.textArea->copy_start_index + 1;
 
+                int newLineNumbers = 0;
+                int leftPos = 0;
+
                 push_command(&w->context.textArea->command_stack, ADD, insert_index, w->context.textArea->temp, 0, 0);
 
                 for (int i = len + copyTextLength - 1; i >= insert_index + copyTextLength; i--)
@@ -1521,11 +1524,18 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     int j = i - insert_index;
                     w->context.textArea->text[i] = w->context.textArea->temp[j];
+                    leftPos++;
+                    if(w->context.textArea->temp[j]=='\n'){
+                        newLineNumbers++;
+                        leftPos=0;
+                    }
                 }
 
                 // w->context.textArea->copy_start_index = w->context.textArea->copy_end_index = -2;
-                w->context.textArea->current_line = (insert_index + copyTextLength) / max_num;
-                w->context.textArea->current_pos = (insert_index + copyTextLength) % max_num;
+                w->context.textArea->current_line += newLineNumbers;
+                w->context.textArea->current_pos  = newLineNumbers==0? w->context.textArea->current_pos+leftPos:leftPos;
+                
+                // printf(1,"current_line: %d current_pos: %d",w->context.textArea->current_line,w->context.textArea->current_pos);
                 // w->context.textArea->isCopying =0;
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
@@ -1549,15 +1559,35 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 if (w->context.textArea->temp != 0)
                     free(w->context.textArea->temp);
                 w->context.textArea->temp = (char *)malloc(copyTextLength);
+
+                int newLineNumbers = 0;
+                int leftPos = 0;
+                for(int i= w->context.textArea->copy_start_index-1 ;i>=0;i--){
+                    if(w->context.textArea->text[i]=='\n'){
+                        break;
+                    }
+                    leftPos++;
+                }
                 for (int i = 0; i < copyTextLength; i++)
                 {
                     w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index + i];
+                    if(w->context.textArea->temp[i]=='\n'){
+                        newLineNumbers++;
+                    }
                 }
                 push_command(&w->context.textArea->command_stack, DEL, w->context.textArea->copy_start_index, w->context.textArea->temp, 0, 0);
                 for (int i = w->context.textArea->copy_start_index; i < len - copyTextLength; i++)
                 {
                     w->context.textArea->text[i] = w->context.textArea->text[i + copyTextLength];
                 }
+                
+                w->context.textArea->current_line -= newLineNumbers;
+                w->context.textArea->current_pos = leftPos;
+                printf(1,"current_line: %d current_pos: %d",w->context.textArea->current_line,w->context.textArea->current_pos);
+
+                w->context.textArea->select_start_index = -2;
+                w->context.textArea->select_end_index = -2;
+
                 w->context.textArea->text[len - copyTextLength] = '\0';
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
