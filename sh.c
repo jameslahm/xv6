@@ -1,8 +1,6 @@
 // Shell.
 
 #include "types.h"
-#include "color.h"
-#include "msg.h"
 #include "user.h"
 #include "fcntl.h"
 
@@ -14,8 +12,6 @@
 #define BACK  5
 
 #define MAXARGS 10
-
-RGB image[800 * 600];
 
 struct cmd {
   int type;
@@ -150,7 +146,6 @@ main(void)
 {
   static char buf[100];
   int fd;
-  int h, w;
   
   // Assumes three file descriptors open.
   while((fd = open("console", O_RDWR)) >= 0){
@@ -159,38 +154,7 @@ main(void)
       break;
     }
   }
-
-  int res = read24BitmapFile("desktop.bmp", image, &h, &w);
-  printf(1, "res: %d\n", res);
-
-  RGB d;
-  int hwnd = createwindow(400, 300, "hello window",&d,0);
-  int hwnd2 = createwindow(600, 200, "hello window 2",&d,0);
-  struct message msg;
-
-  while(1)
-  {
-  	if (getmessage(hwnd, &msg))
-  	{
-  		if (msg.msg_type == WM_WINDOW_CLOSE)
-  			break;
-  		//printf(2, "%d %d %d\n", msg.msg_type, msg.params[0], msg.params[1]);
-  	}
-  	if (getmessage(hwnd2, &msg))
-  	{
-  	  	if (msg.msg_type == WM_WINDOW_CLOSE)
-  			break;
-  		if (msg.msg_type == M_KEY_DOWN)
-  		{
-  			if (msg.params[0] == 'a') break;
-  		}
-  		//printf(2, "%d %d %d\n", msg.msg_type, msg.params[0], msg.params[1]);
-  	}
-  }
   
-  destroywindow(hwnd);
-  while(1);;
-
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
