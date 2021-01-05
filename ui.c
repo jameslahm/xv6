@@ -1865,8 +1865,8 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         if (msg->params[0] == KEY_UP)
         {
             int insert_index = w->context.textArea->insert_index;
-            if ((insert_index) >= max_num)
-            {
+            
+            if(w->context.textArea->current_line>=1){
                 w->context.textArea->current_line--;
             }
             if ((msg->params[1] & 1) == 1)
@@ -1876,7 +1876,28 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     w->context.textArea->select_end_index = insert_index - 1;
                 }
 
-                w->context.textArea->select_start_index = insert_index;
+                // w->context.textArea->select_start_index = insert_index;
+                // TODO: fix 
+                int nextNewlineIndex = 0;
+                char* text = w->context.textArea->text;
+                for(int k=insert_index-1;k>=0;k--){
+                    if(text[k]=='\n'){
+                        nextNewlineIndex = k;
+                        break;
+                    }
+                }
+                int beforeNewlineIndex = 0;
+                for(int k = nextNewlineIndex-1;k>=0;k--){
+                    if(text[k]=='\n'){
+                        beforeNewlineIndex = k;
+                        break;    
+                    }
+                }
+                w->context.textArea->select_start_index = beforeNewlineIndex + insert_index - nextNewlineIndex;
+                if(beforeNewlineIndex==0 && text[beforeNewlineIndex]!='\n'){
+                    w->context.textArea->select_start_index -=1;
+                }
+
             }
             else
             {
@@ -1890,18 +1911,34 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         if (msg->params[0] == KEY_DN)
         {
             int insert_index = w->context.textArea->insert_index;
-            if (((current_line + 1) * max_num + current_pos) <= len)
-            {
-                w->context.textArea->current_line++;
-            }
+            w->context.textArea->current_line++;
             if ((msg->params[1] & 1) == 1)
             {
-                if (w->context.textArea->select_end_index < 0)
+                if (w->context.textArea->select_start_index < 0)
                 {
-                    w->context.textArea->select_end_index = insert_index;
+                    w->context.textArea->select_start_index = insert_index;
                 }
-
-                w->context.textArea->select_start_index = insert_index - 1;
+                // w->context.textArea->select_start_index = insert_index -1;
+                // TODO: fix 
+                int beforeNewlineIndex = 0;
+                char* text = w->context.textArea->text;
+                for(int k=insert_index-1;k>=0;k--){
+                    if(text[k]=='\n'){
+                        beforeNewlineIndex = k;
+                        break;
+                    }
+                }
+                int nextNewlineIndex = 0;
+                for(int k = insert_index;k<len;k++){
+                    if(text[k]=='\n'){
+                        nextNewlineIndex = k;
+                        break;    
+                    }
+                }
+                w->context.textArea->select_end_index = nextNewlineIndex + insert_index - beforeNewlineIndex -1;
+                if(beforeNewlineIndex==0 && text[beforeNewlineIndex]!='\n'){
+                    w->context.textArea->select_end_index +=1;
+                }
             }
             else
             {
@@ -1984,8 +2021,8 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
     }
     if (msg->msg_type == M_MOUSE_LEFT_CLICK)
     {
-        int cursor_line = msg->params[1] / (CHARACTER_HEIGHT);
-        int cursor_pos = msg->params[0] / CHARACTER_WIDTH;
+        int cursor_line = msg->params[1] / (CHARACTER_HEIGHT * w->context.textArea->scale);
+        int cursor_pos = msg->params[0] / (CHARACTER_WIDTH * w->context.textArea->scale);
 
         printf(1, "cursor line: %d\n", cursor_line);
         printf(1, "cursor pos:%d\n", cursor_pos);
