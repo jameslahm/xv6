@@ -1059,6 +1059,9 @@ void generateHighlightRGB(Widget *w)
     char *text = w->context.textArea->text;
     int len = strlen(text);
     RGBA *colors = w->context.textArea->colors;
+    for (int i =0 ;i<len;i++){
+        colors[i] = w->context.textArea->color;
+    }
 
     for (int i = 0; i < len && text[i]; i++)
     {
