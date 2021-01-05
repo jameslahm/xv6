@@ -7,6 +7,7 @@
 #include "ui.h"
 #include "character.h"
 #include "fs.h"
+#include "cmd.h"
 // #include "kbd.h"
 #define KEY_HOME 0xE0
 #define KEY_END 0xE1
@@ -920,6 +921,34 @@ void drawTextAreaWidget(window *win, int index)
                           replace_text[i], blackA);
         }
     }
+
+    if (w->context.textArea->isInTerminal)
+    {
+        drawRect(win, black, 0, 440, 769, 100);
+        char *cmd = w->context.textArea->cmd;
+        char *cmd_res = w->context.textArea->cmd_res;
+        int current_x = 0;
+        int current_y = 0;
+        for(int i=0;i<strlen(cmd_res);i++){
+            if(cmd_res[i]=='\n'){
+                current_y++;
+                current_x=0;
+            }
+            else{
+                drawCharacter(win, 1 + CHARACTER_WIDTH * (current_x), 441 + CHARACTER_HEIGHT * current_y,
+                      cmd_res[i], blackA);
+                current_x++;
+            }
+        }
+        drawCharacter(win, 1, 441 + current_y * CHARACTER_HEIGHT,
+                      '>', blackA);
+        drawCharacter(win, 1 + CHARACTER_WIDTH, 441 + current_y * CHARACTER_HEIGHT,
+                      '>', blackA);
+        for(int i=0;i<strlen(cmd);i++){
+            drawCharacter(win, 1 + CHARACTER_WIDTH * (i+2), 441+ current_y * CHARACTER_HEIGHT,
+                      cmd[i], blackA);
+        }
+    }
 }
 
 void drawFileListWidget(window *win, int index)
@@ -1307,8 +1336,10 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         if (msg->params[0] == 0x1b)
         {
             w->context.textArea->isSearching = 0;
+            w->context.textArea->isInTerminal = 0;
             memset(w->context.textArea->search_text, 0, BUF_SIZE);
             memset(w->context.textArea->replace_text, 0, BUF_SIZE);
+            memset(w->context.textArea->cmd,0,BUF_SIZE);
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
             return;
@@ -1327,13 +1358,17 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             }
             else
             {
-                if((msg->params[1] &1)==1){
-                    if(msg->params[0]>='a' && msg->params[0]<='z'){
-                        msg->params[0]-=32;
+                if ((msg->params[1] & 1) == 1)
+                {
+                    if (msg->params[0] >= 'a' && msg->params[0] <= 'z')
+                    {
+                        msg->params[0] -= 32;
                     }
-                    else{
-                        if(msg->params[0]){
-                            msg->params[0]= shift_ascii_map[msg->params[0]];
+                    else
+                    {
+                        if (msg->params[0])
+                        {
+                            msg->params[0] = shift_ascii_map[msg->params[0]];
                         }
                     }
                 }
@@ -1410,17 +1445,83 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
             }
             else
             {
-                if((msg->params[1] &1)==1){
-                    if(msg->params[0]>='a' && msg->params[0]<='z'){
-                        msg->params[0]-=32;
+                if ((msg->params[1] & 1) == 1)
+                {
+                    if (msg->params[0] >= 'a' && msg->params[0] <= 'z')
+                    {
+                        msg->params[0] -= 32;
                     }
-                    else{
-                        if(msg->params[0]){
-                            msg->params[0]= shift_ascii_map[msg->params[0]];
+                    else
+                    {
+                        if (msg->params[0])
+                        {
+                            msg->params[0] = shift_ascii_map[msg->params[0]];
                         }
                     }
                 }
                 replace_text[strlen(replace_text)] = msg->params[0];
+            }
+            drawTextAreaWidget(win, index);
+            updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+            return;
+        }
+        if(w->context.textArea->isInTerminal){
+            char *cmd = w->context.textArea->cmd;
+            char *cmd_res = w->context.textArea->cmd_res;
+            if(msg->params[0]=='\b'){
+                cmd[strlen(cmd)-1]='\0';
+            }
+            else if(msg->params[0]=='\n'){
+                int p[2];
+                if(pipe(p)<0){
+                    printf(1,"Pipe Error\n");        
+                }
+                if(fork1()==0){
+                    close(1);
+                    close(2);
+                    dup(p[1]);
+                    dup(p[1]);
+                    close(p[0]);
+                    close(p[1]);
+                    runcmd(parsecmd(cmd));
+                    close(1);
+                    close(2);
+                }
+                close(p[1]);
+                wait();
+                printf(1,"Complete!!!\n");
+
+                cmd_res[strlen(cmd_res)] = '>';
+                cmd_res[strlen(cmd_res)] = '>';
+                strcpy(cmd_res + strlen(cmd_res),cmd);
+                cmd_res[strlen(cmd_res)]='\n';
+                char c;
+                int i = strlen(cmd_res);
+                while(1){
+                    int cc= read(p[0],&c,1);
+                    if(cc<1) break;
+                    cmd_res[i++] = c;
+                }
+                memset(cmd,0,BUF_SIZE);
+                printf(1,"Cmd Res: %s",cmd_res);
+                printf(1,"Cmd: ",cmd);
+            }
+            else{
+                if ((msg->params[1] & 1) == 1)
+                {
+                    if (msg->params[0] >= 'a' && msg->params[0] <= 'z')
+                    {
+                        msg->params[0] -= 32;
+                    }
+                    else
+                    {
+                        if (msg->params[0])
+                        {
+                            msg->params[0] = shift_ascii_map[msg->params[0]];
+                        }
+                    }
+                }
+                cmd[strlen(cmd)] = msg->params[0];
             }
             drawTextAreaWidget(win, index);
             updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
@@ -1525,16 +1626,17 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     int j = i - insert_index;
                     w->context.textArea->text[i] = w->context.textArea->temp[j];
                     leftPos++;
-                    if(w->context.textArea->temp[j]=='\n'){
+                    if (w->context.textArea->temp[j] == '\n')
+                    {
                         newLineNumbers++;
-                        leftPos=0;
+                        leftPos = 0;
                     }
                 }
 
                 // w->context.textArea->copy_start_index = w->context.textArea->copy_end_index = -2;
                 w->context.textArea->current_line += newLineNumbers;
-                w->context.textArea->current_pos  = newLineNumbers==0? w->context.textArea->current_pos+leftPos:leftPos;
-                
+                w->context.textArea->current_pos = newLineNumbers == 0 ? w->context.textArea->current_pos + leftPos : leftPos;
+
                 // printf(1,"current_line: %d current_pos: %d",w->context.textArea->current_line,w->context.textArea->current_pos);
                 // w->context.textArea->isCopying =0;
                 drawTextAreaWidget(win, index);
@@ -1562,8 +1664,10 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
                 int newLineNumbers = 0;
                 int leftPos = 0;
-                for(int i= w->context.textArea->copy_start_index-1 ;i>=0;i--){
-                    if(w->context.textArea->text[i]=='\n'){
+                for (int i = w->context.textArea->copy_start_index - 1; i >= 0; i--)
+                {
+                    if (w->context.textArea->text[i] == '\n')
+                    {
                         break;
                     }
                     leftPos++;
@@ -1571,7 +1675,8 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 for (int i = 0; i < copyTextLength; i++)
                 {
                     w->context.textArea->temp[i] = w->context.textArea->text[w->context.textArea->copy_start_index + i];
-                    if(w->context.textArea->temp[i]=='\n'){
+                    if (w->context.textArea->temp[i] == '\n')
+                    {
                         newLineNumbers++;
                     }
                 }
@@ -1580,10 +1685,10 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 {
                     w->context.textArea->text[i] = w->context.textArea->text[i + copyTextLength];
                 }
-                
+
                 w->context.textArea->current_line -= newLineNumbers;
                 w->context.textArea->current_pos = leftPos;
-                printf(1,"current_line: %d current_pos: %d",w->context.textArea->current_line,w->context.textArea->current_pos);
+                printf(1, "current_line: %d current_pos: %d", w->context.textArea->current_line, w->context.textArea->current_pos);
 
                 w->context.textArea->select_start_index = -2;
                 w->context.textArea->select_end_index = -2;
@@ -1746,8 +1851,17 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
             }
-            if(msg->params[0]=='s'){
-                win->widgets[1].context.button->onLeftClick(win,1,0);
+            if (msg->params[0] == 's')
+            {
+                win->widgets[1].context.button->onLeftClick(win, 1, 0);
+            }
+
+            if (msg->params[0] == '`')
+            {
+                w->context.textArea->isInTerminal = 1;
+                drawTextAreaWidget(win, index);
+                updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
+                return;
             }
 
             return;
@@ -1895,8 +2009,9 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         if (msg->params[0] == KEY_UP)
         {
             int insert_index = w->context.textArea->insert_index;
-            
-            if(w->context.textArea->current_line>=1){
+
+            if (w->context.textArea->current_line >= 1)
+            {
                 w->context.textArea->current_line--;
             }
             if ((msg->params[1] & 1) == 1)
@@ -1907,27 +2022,31 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 }
 
                 // w->context.textArea->select_start_index = insert_index;
-                // TODO: fix 
+                // TODO: fix
                 int nextNewlineIndex = 0;
-                char* text = w->context.textArea->text;
-                for(int k=insert_index-1;k>=0;k--){
-                    if(text[k]=='\n'){
+                char *text = w->context.textArea->text;
+                for (int k = insert_index - 1; k >= 0; k--)
+                {
+                    if (text[k] == '\n')
+                    {
                         nextNewlineIndex = k;
                         break;
                     }
                 }
                 int beforeNewlineIndex = 0;
-                for(int k = nextNewlineIndex-1;k>=0;k--){
-                    if(text[k]=='\n'){
+                for (int k = nextNewlineIndex - 1; k >= 0; k--)
+                {
+                    if (text[k] == '\n')
+                    {
                         beforeNewlineIndex = k;
-                        break;    
+                        break;
                     }
                 }
                 w->context.textArea->select_start_index = beforeNewlineIndex + insert_index - nextNewlineIndex;
-                if(beforeNewlineIndex==0 && text[beforeNewlineIndex]!='\n'){
-                    w->context.textArea->select_start_index -=1;
+                if (beforeNewlineIndex == 0 && text[beforeNewlineIndex] != '\n')
+                {
+                    w->context.textArea->select_start_index -= 1;
                 }
-
             }
             else
             {
@@ -1949,25 +2068,30 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     w->context.textArea->select_start_index = insert_index;
                 }
                 // w->context.textArea->select_start_index = insert_index -1;
-                // TODO: fix 
+                // TODO: fix
                 int beforeNewlineIndex = 0;
-                char* text = w->context.textArea->text;
-                for(int k=insert_index-1;k>=0;k--){
-                    if(text[k]=='\n'){
+                char *text = w->context.textArea->text;
+                for (int k = insert_index - 1; k >= 0; k--)
+                {
+                    if (text[k] == '\n')
+                    {
                         beforeNewlineIndex = k;
                         break;
                     }
                 }
                 int nextNewlineIndex = 0;
-                for(int k = insert_index;k<len;k++){
-                    if(text[k]=='\n'){
+                for (int k = insert_index; k < len; k++)
+                {
+                    if (text[k] == '\n')
+                    {
                         nextNewlineIndex = k;
-                        break;    
+                        break;
                     }
                 }
-                w->context.textArea->select_end_index = nextNewlineIndex + insert_index - beforeNewlineIndex -1;
-                if(beforeNewlineIndex==0 && text[beforeNewlineIndex]!='\n'){
-                    w->context.textArea->select_end_index +=1;
+                w->context.textArea->select_end_index = nextNewlineIndex + insert_index - beforeNewlineIndex - 1;
+                if (beforeNewlineIndex == 0 && text[beforeNewlineIndex] != '\n')
+                {
+                    w->context.textArea->select_end_index += 1;
                 }
             }
             else
@@ -2085,7 +2209,7 @@ void fileListDoubleClickHandler(window *win, int index, message *msg)
     }
     if (calcu_index < w->context.fileList->file_num)
     {
-        printf(1,"Invoke!!!\n");
+        printf(1, "Invoke!!!\n");
         IconView *p = w->context.fileList->file_list;
         int i;
         for (i = 0; i < calcu_index; i++)
@@ -2151,8 +2275,8 @@ void mainLoop(window *win)
                     {
                         win->widgets[i].context.fileList->onDoubleClick(win, i, &msg);
                         win->widgets[i].context.fileList->file_num = 0;
-                        UI_ls(win->widgets[i].context.fileList->path,&win->widgets[i]);
-                        drawFileListWidget(win,i);
+                        UI_ls(win->widgets[i].context.fileList->path, &win->widgets[i]);
+                        drawFileListWidget(win, i);
                         updatewindow(win->handler, 0, 0, win->width, win->height);
                         break;
                     }

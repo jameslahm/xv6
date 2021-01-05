@@ -128,6 +128,12 @@ typedef struct TextArea {
 
     int scale;
 
+    int isInTerminal;
+
+    char cmd[BUF_SIZE];
+
+    char cmd_res[BUF_SIZE];
+
 } TextArea;
 
 
