@@ -22,6 +22,13 @@
 char shift_ascii_map[128] =
     {
         [0x30] 0x29, [0x31] 0x21, [0x32] 0x40, [0x33] 0x23, [0x34] 0x24, [0x35] 0x25, [0x36] 0x5E, [0x37] 0x26, [0x38] 0x2A, [0x39] 0x28, [0x2D] 0x5F, [0x3D] 0x2B, [0x5B] 0x7B, [0x5D] 0x7D, [0x5C] 0x7C, [0x3B] 0x3A, [0x27] 0x22, [0x2F] 0x3F, [0x2C] 0x3C, [0x2E] 0x3E, [0x60] 0x7E};
+
+struct RGBA brown = {87, 144, 111, 255};
+struct RGBA green = {185,198,190,255};
+struct RGBA blue = {175,147,113,255};
+struct RGBA pink = {184,138,185,255};
+struct RGBA orange = {141,149,186,255};
+
 void drawImageWidget(window *win, int index);
 void drawLabelWidget(window *win, int index);
 void drawButtonWidget(window *win, int index);
@@ -1081,6 +1088,9 @@ void generateHighlightRGB(Widget *w)
     char *text = w->context.textArea->text;
     int len = strlen(text);
     RGBA *colors = w->context.textArea->colors;
+    for (int i =0 ;i<len;i++){
+        colors[i] = w->context.textArea->color;
+    }
 
     for (int i = 0; i < len && text[i]; i++)
     {
@@ -1106,7 +1116,7 @@ void generateHighlightRGB(Widget *w)
         {
             for (int j = i; j < newlineIndex; j++)
             {
-                colors[j] = (struct RGBA){120, 120, 120, 255};
+                colors[j] = brown;
                 i++;
             }
             continue;
@@ -1117,7 +1127,7 @@ void generateHighlightRGB(Widget *w)
             // numbers
             if (text[i] >= '0' && text[i] <= '9')
             {
-                colors[i] = (struct RGBA){60, 120, 120, 255};
+                colors[i] = green;
                 i += 1;
             }
 
@@ -1131,7 +1141,7 @@ void generateHighlightRGB(Widget *w)
                     ;
                 for (int i = start; i <= end; i++)
                 {
-                    colors[i] = (struct RGBA){10, 120, 120, 255};
+                    colors[i] = orange;
                 }
                 i = end;
             }
@@ -1140,168 +1150,168 @@ void generateHighlightRGB(Widget *w)
             else if (text[i] == '\'')
             {
                 if (i + 1 < len)
-                    colors[i + 1] = (struct RGBA){10, 10, 120, 255};
+                    colors[i + 1] = orange;
                 if (i + 2 < len)
-                    colors[i + 2] = (struct RGBA){10, 10, 120, 255};
+                    colors[i + 2] = orange;
                 i += 3;
             }
-
+            
             // int
             else if ((len - i) >= 3 && text[i] == 'i' && text[i + 1] == 'n' && text[i + 2] == 't')
             {
-                colors[i] = (struct RGBA){10, 10, 120, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 120, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 120, 255};
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
                 i += 3;
             }
 
             // long
             else if ((len - i) >= 4 && text[i] == 'l' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 'g')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
                 i += 4;
             }
 
             // double
             else if ((len - i) >= 6 && text[i] == 'd' && text[i + 1] == 'o' && text[i + 2] == 'u' && text[i + 3] == 'b' && text[i + 4] == 'l' && text[i + 5] == 'e')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 5] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
+                colors[i + 4] = blue;
+                colors[i + 5] = blue;
                 i += 6;
             }
 
             // float
             else if ((len - i) >= 5 && text[i] == 'f' && text[i + 1] == 'l' && text[i + 2] == 'o' && text[i + 3] == 'a' && text[i + 4] == 't')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
+                colors[i + 4] = blue;
                 i += 5;
             }
 
             // char
             else if ((len - i) >= 4 && text[i] == 'c' && text[i + 1] == 'h' && text[i + 2] == 'a' && text[i + 3] == 'r')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
                 i += 4;
             }
 
             // if
             else if ((len - i) >= 2 && text[i] == 'i' && text[i + 1] == 'f')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
                 i += 2;
             }
 
             // else
             else if ((len - i) >= 4 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
                 i += 4;
             }
 
             // else if
             else if ((len - i) >= 7 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e' && text[i + 4] == ' ' && text[i + 5] == 'i' && text[i + 6] == 'f')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 5] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 6] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
+                colors[i + 6] = pink;
                 i += 7;
             }
 
             // for
             else if ((len - i) >= 3 && text[i] == 'f' && text[i + 1] == 'o' && text[i + 2] == 'r')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
                 i += 3;
             }
 
             // while
             else if ((len - i) >= 5 && text[i] == 'w' && text[i + 1] == 'h' && text[i + 2] == 'i' && text[i + 3] == 'l' && text[i + 4] == 'e')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
                 i += 5;
             }
 
             // static
             else if ((len - i) >= 6 && text[i] == 's' && text[i + 1] == 't' && text[i + 2] == 'a' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'c')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i+5] = pink;
                 i += 6;
             }
 
             // const
             else if ((len - i) >= 5 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 's' && text[i + 4] == 't')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
                 i += 5;
             }
 
             else if ((len - i) >= 8 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'n' && text[i + 6] == 'u' && text[i + 7] == 'e')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 5] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 6] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 7] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
+                colors[i + 6] = pink;
+                colors[i + 7] = pink;
                 i += 8;
             }
-
             else if ((len - i) >= 6 && text[i] == 'r' && text[i + 1] == 'e' && text[i + 2] == 't' && text[i + 3] == 'u' && text[i + 4] == 'r' && text[i + 5] == 'n')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 5] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
                 i += 6;
             }
 
             else if ((len - i) >= 5 && text[i] == 'b' && text[i + 1] == 'r' && text[i + 2] == 'e' && text[i + 3] == 'a' && text[i + 4] == 'k')
             {
-                colors[i] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 1] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 2] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 3] = (struct RGBA){10, 10, 10, 255};
-                colors[i + 4] = (struct RGBA){10, 10, 10, 255};
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
                 i += 5;
             }
 
