@@ -1149,11 +1149,12 @@ void generateHighlightRGB(Widget *w)
                 int end = i + 1;
                 for (; text[end] != '"' && text[end] != '\0'; end++)
                     ;
+                printf(1, "Start: %d End: %d", start, end);
                 for (int i = start; i <= end; i++)
                 {
                     colors[i] = orange;
                 }
-                i = end;
+                i = end + 1;
             }
 
             // single char
@@ -1881,7 +1882,8 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                         {
                             w->context.textArea->text[i] = command->content[i - command->index];
                         }
-                        w->context.textArea->current_pos += strlen(command->content);
+                        if (w->context.textArea->current_line != 0 || w->context.textArea->current_pos != 0)
+                            w->context.textArea->current_pos += strlen(command->content);
                     }
 
                     if (command_stack->stack_pos < 0)
