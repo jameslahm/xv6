@@ -7,7 +7,8 @@
 
 RGB image[800 * 600];
 
-int main() {
+int main()
+{
     int h, w;
     Window desktop;
     desktop.width = MAX_WIDTH;

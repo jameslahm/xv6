@@ -1,6 +1,7 @@
 #ifndef __ASSEMBLER__
 
-typedef struct BITMAP_FILE_HEADER {
+typedef struct BITMAP_FILE_HEADER
+{
     ushort bfType;
     uint bfSize;
     ushort bfReserved1;
@@ -8,7 +9,8 @@ typedef struct BITMAP_FILE_HEADER {
     uint btOffBits;
 } __attribute__((packed)) BITMAP_FILE_HEADER;
 
-typedef struct BITMAP_INFO_HEADER {
+typedef struct BITMAP_INFO_HEADER
+{
     uint biSize;
     int biWidth;
     int biHeight;

@@ -307,7 +307,7 @@ int get_line_number(char *text[])
     return line_number;
 }
 
-void push_command(struct CommandStack *command_stack, enum CommandType type, int line, char *content,char *old_content)
+void push_command(struct CommandStack *command_stack, enum CommandType type, int line, char *content, char *old_content)
 {
     if (type == INS)
     {
@@ -340,19 +340,20 @@ void push_command(struct CommandStack *command_stack, enum CommandType type, int
         buf = (char *)malloc(BUF_SIZE);
         memset(buf, 0, BUF_SIZE);
         strcpy(buf, old_content);
-        command_stack->stack[command_stack->stack_pos].old_content=buf;
+        command_stack->stack[command_stack->stack_pos].old_content = buf;
         command_stack->max_stack_pos = command_stack->stack_pos;
     }
 }
 
-void handle_ins(char *text[],int line,char* content,struct CommandStack *command_stack);
-void handle_mod(char *text[],int line,char* content,struct CommandStack *command_stack);
-void handle_del(char *text[],int line,struct CommandStack *command_stack);
+void handle_ins(char *text[], int line, char *content, struct CommandStack *command_stack);
+void handle_mod(char *text[], int line, char *content, struct CommandStack *command_stack);
+void handle_del(char *text[], int line, struct CommandStack *command_stack);
 
 void handle_undo(char *text[], struct CommandStack *command_stack)
 {
-    if(command_stack->stack_pos==-1){
-        printf(1,"\e[0;31mNo actions\n\e[0m");
+    if (command_stack->stack_pos == -1)
+    {
+        printf(1, "\e[0;31mNo actions\n\e[0m");
         return;
     }
     struct Command *command = &command_stack->stack[command_stack->stack_pos];
@@ -360,31 +361,37 @@ void handle_undo(char *text[], struct CommandStack *command_stack)
     {
         handle_del(text, command->line, NULL);
     }
-    if(command->type==MOD){
-        handle_mod(text,command->line,command->old_content,NULL);
+    if (command->type == MOD)
+    {
+        handle_mod(text, command->line, command->old_content, NULL);
     }
-    if(command->type==DEL){
-        handle_ins(text,command->line,command->content,NULL);
+    if (command->type == DEL)
+    {
+        handle_ins(text, command->line, command->content, NULL);
     }
     command_stack->stack_pos--;
 }
 
-void handle_redo(char *text[],struct CommandStack *command_stack){
-    if(command_stack->max_stack_pos==command_stack->stack_pos){
-        printf(1,"\e[0;31mNo actions\n\e[0m");
+void handle_redo(char *text[], struct CommandStack *command_stack)
+{
+    if (command_stack->max_stack_pos == command_stack->stack_pos)
+    {
+        printf(1, "\e[0;31mNo actions\n\e[0m");
         return;
     }
     command_stack->stack_pos++;
     struct Command *command = &command_stack->stack[command_stack->stack_pos];
     if (command->type == INS)
     {
-        handle_ins(text,command->line,command->content,NULL);
+        handle_ins(text, command->line, command->content, NULL);
     }
-    if(command->type==MOD){
-        handle_mod(text,command->line,command->content,NULL);
+    if (command->type == MOD)
+    {
+        handle_mod(text, command->line, command->content, NULL);
     }
-    if(command->type==DEL){
-        handle_del(text,command->line,NULL);
+    if (command->type == DEL)
+    {
+        handle_del(text, command->line, NULL);
     }
 }
 
@@ -410,7 +417,7 @@ void handle_ins(char *text[], int line_number, char *content, struct CommandStac
     strcpy(text[line_number], content);
 
     if (command_stack)
-        push_command(command_stack, INS, line_number, content,NULL);
+        push_command(command_stack, INS, line_number, content, NULL);
     return;
 }
 
@@ -427,7 +434,7 @@ void handle_mod(char *text[], int line_number, char *content, struct CommandStac
 
     if (command_stack)
     {
-        push_command(command_stack, MOD, line_number,content,text[line_number]);
+        push_command(command_stack, MOD, line_number, content, text[line_number]);
     }
     memset(text[line_number], 0, BUF_SIZE);
     strcpy(text[line_number], content);
@@ -439,7 +446,7 @@ void handle_del(char *text[], int line_number, struct CommandStack *command_stac
     int current_line_number = get_line_number(text);
 
     if (command_stack)
-        push_command(command_stack, DEL, line_number, text[line_number],NULL);
+        push_command(command_stack, DEL, line_number, text[line_number], NULL);
 
     for (int i = line_number; i < current_line_number - 1; i++)
     {
@@ -685,7 +692,7 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1 && (number-1) < line_number)
+                if (number != -1 && (number - 1) < line_number)
                 {
                     handle_mod(text, number - 1, buf + pos + 1, &command_stack);
                 }
@@ -708,7 +715,7 @@ int main(int argc, char *argv[])
             if (buf[3] == '-')
             {
                 int number = s2num(buf + 4);
-                if (number != -1 && (number-1) < line_number)
+                if (number != -1 && (number - 1) < line_number)
                 {
                     handle_del(text, number - 1, &command_stack);
                 }
@@ -758,41 +765,46 @@ int main(int argc, char *argv[])
         {
             highlight_flag = 1;
             printf(1, "\e[0;32mEnable highlight successful\n\e[0m");
-            if(auto_show){
-                show_text(text,highlight_flag);
+            if (auto_show)
+            {
+                show_text(text, highlight_flag);
             }
         }
         else if (strcmp(buf, "nhighl") == 0)
         {
             highlight_flag = 0;
             printf(1, "\e[0;32mDisable highlight successful\n\e[0m");
-            if(auto_show){
-                show_text(text,highlight_flag);
+            if (auto_show)
+            {
+                show_text(text, highlight_flag);
             }
         }
         else if (strcmp(buf, "undo") == 0)
         {
             handle_undo(text, &command_stack);
-            if(auto_show){
-                show_text(text,highlight_flag);
+            if (auto_show)
+            {
+                show_text(text, highlight_flag);
             }
         }
         else if (strcmp(buf, "redo") == 0)
         {
             handle_redo(text, &command_stack);
-            if(auto_show){
-                show_text(text,highlight_flag);
+            if (auto_show)
+            {
+                show_text(text, highlight_flag);
             }
         }
         else if (strcmp(buf, "print") == 0)
         {
-            show_text(text,highlight_flag);
+            show_text(text, highlight_flag);
         }
         else
         {
             printf(2, "\e[0;31mminvalid command\e[0m\n");
-            if(auto_show){
-                show_text(text,highlight_flag);
+            if (auto_show)
+            {
+                show_text(text, highlight_flag);
             }
         }
     }

@@ -23,12 +23,12 @@ char shift_ascii_map[128] =
     {
         [0x30] 0x29, [0x31] 0x21, [0x32] 0x40, [0x33] 0x23, [0x34] 0x24, [0x35] 0x25, [0x36] 0x5E, [0x37] 0x26, [0x38] 0x2A, [0x39] 0x28, [0x2D] 0x5F, [0x3D] 0x2B, [0x5B] 0x7B, [0x5D] 0x7D, [0x5C] 0x7C, [0x3B] 0x3A, [0x27] 0x22, [0x2F] 0x3F, [0x2C] 0x3C, [0x2E] 0x3E, [0x60] 0x7E};
 
-void drawImageWidget(Window*win, int index);
-void drawTextAreaWidget(Window*win, int index);
-void drawFileListWidget(Window*win, int index);
+void drawImageWidget(Window *win, int index);
+void drawTextAreaWidget(Window *win, int index);
+void drawFileListWidget(Window *win, int index);
 
-void fileListDoubleClickHandler(Window*win, int index, Message *msg);
-void textAreaKeyDownHandler(Window*win, int index, Message *msg);
+void fileListDoubleClickHandler(Window *win, int index, Message *msg);
+void textAreaKeyDownHandler(Window *win, int index, Message *msg);
 void generateHighlightRGB(Widget *w);
 
 void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content, char *old_content, int isBatch)
@@ -64,7 +64,7 @@ char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {
     "folder.bmp",
     "unknown.bmp"};
 
-void UI_createWindow(Window*win, const char *title, int alwaysfront)
+void UI_createWindow(Window *win, const char *title, int alwaysfront)
 {
     if (win->width > MAX_WIDTH || win->height > MAX_HEIGHT)
     {
@@ -97,7 +97,7 @@ void freeWidget(Widget *widget)
     }
 }
 
-void UI_destroyWindow(Window*win)
+void UI_destroyWindow(Window *win)
 {
     free(win->window_buf);
     int i;
@@ -124,7 +124,7 @@ void UI_destroyWindow(Window*win)
 }
 
 // system call
-void updatePartWindow(Window*win, int x, int y, int w, int h)
+void updatePartWindow(Window *win, int x, int y, int w, int h)
 {
     updatewindow(win->handler, x, y, w, h);
 }
@@ -137,7 +137,7 @@ void setWidgetSize(Widget *widget, int x, int y, int w, int h)
     widget->size.width = w;
 }
 
-int addImageWidget(Window*win, RGB *image, int x, int y, int w, int h)
+int addImageWidget(Window *win, RGB *image, int x, int y, int w, int h)
 {
     if (win->widget_number >= MAX_WIDGET)
     {
@@ -154,7 +154,7 @@ int addImageWidget(Window*win, RGB *image, int x, int y, int w, int h)
     return (win->widget_number - 1);
 }
 
-int addTextAreaWidget(Window*win, RGBA c, char *text, int x, int y, int w, int h,char *name)
+int addTextAreaWidget(Window *win, RGBA c, char *text, int x, int y, int w, int h, char *name)
 {
     if (win->widget_number >= MAX_WIDGET)
     {
@@ -166,7 +166,7 @@ int addTextAreaWidget(Window*win, RGBA c, char *text, int x, int y, int w, int h
     {
         t->colors[i] = c;
     }
-    strcpy(t->filename,name);
+    strcpy(t->filename, name);
     t->current_pos = 0;
     t->current_line = 0;
     t->select_start_index = -2;
@@ -246,17 +246,20 @@ void UI_ls(char *path, Widget *widget)
             continue;
         }
         tmpName = UI_fmtname(buf);
-        if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0 )
+        if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0)
         {
             continue;
         }
         int flag = 0;
-        for(int k=0;k<FILE_TYPE_NUM;k++){
-            if(strcmp(tmpName,file_image_path[k])==0){
-                flag=1;
+        for (int k = 0; k < FILE_TYPE_NUM; k++)
+        {
+            if (strcmp(tmpName, file_image_path[k]) == 0)
+            {
+                flag = 1;
             }
         }
-        if(flag){
+        if (flag)
+        {
             continue;
         }
         Icon *iconView = malloc(sizeof(Icon));
@@ -300,7 +303,7 @@ void UI_ls(char *path, Widget *widget)
     }
 }
 
-int addFileListWidget(Window*win, char *path, int direction, int x, int y, int w, int h)
+int addFileListWidget(Window *win, char *path, int direction, int x, int y, int w, int h)
 {
     if (win->widget_number >= MAX_WIDGET)
     {
@@ -360,7 +363,7 @@ void drawPointAlpha(RGB *color, RGBA origin)
     color->B = color->B * (1 - alpha) + origin.B * alpha;
 }
 
-int drawCharacterWithBg(Window*win, int x, int y, char ch, RGBA color, RGBA bg)
+int drawCharacterWithBg(Window *win, int x, int y, char ch, RGBA color, RGBA bg)
 {
     int i, j;
     RGB *t;
@@ -404,7 +407,7 @@ int drawCharacterWithBg(Window*win, int x, int y, char ch, RGBA color, RGBA bg)
     return CHARACTER_WIDTH;
 }
 
-int drawCharacterWithBgWithScale(Window*win, int x, int y, char ch, RGBA color, RGBA bg, int scale)
+int drawCharacterWithBgWithScale(Window *win, int x, int y, char ch, RGBA color, RGBA bg, int scale)
 {
     int i, j;
     RGB *t;
@@ -448,7 +451,7 @@ int drawCharacterWithBgWithScale(Window*win, int x, int y, char ch, RGBA color, 
     return CHARACTER_WIDTH;
 }
 
-int drawCharacterWicthScale(Window*win, int x, int y, char ch, RGBA color, int scale)
+int drawCharacterWicthScale(Window *win, int x, int y, char ch, RGBA color, int scale)
 {
     int i, j;
     RGB *t;
@@ -488,7 +491,7 @@ int drawCharacterWicthScale(Window*win, int x, int y, char ch, RGBA color, int s
     return CHARACTER_WIDTH;
 }
 
-int drawCharacter(Window*win, int x, int y, char ch, RGBA color)
+int drawCharacter(Window *win, int x, int y, char ch, RGBA color)
 {
     int i, j;
     RGB *t;
@@ -527,7 +530,7 @@ int drawCharacter(Window*win, int x, int y, char ch, RGBA color)
     return CHARACTER_WIDTH;
 }
 
-void drawString(Window*win, int x, int y, char *str, RGBA color, int width)
+void drawString(Window *win, int x, int y, char *str, RGBA color, int width)
 {
     int offset_x = 0;
 
@@ -542,7 +545,7 @@ void drawString(Window*win, int x, int y, char *str, RGBA color, int width)
     }
 }
 
-void drawImage(Window*win, RGBA *img, int x, int y, int width, int height)
+void drawImage(Window *win, RGBA *img, int x, int y, int width, int height)
 {
     int i, j;
     RGB *t;
@@ -574,7 +577,7 @@ void drawImage(Window*win, RGBA *img, int x, int y, int width, int height)
     }
 }
 
-void draw24Image(Window*win, RGB *img, int x, int y, int width, int height)
+void draw24Image(Window *win, RGB *img, int x, int y, int width, int height)
 {
     int i;
     RGB *t;
@@ -596,7 +599,7 @@ void draw24Image(Window*win, RGB *img, int x, int y, int width, int height)
     }
 }
 
-void drawRect(Window*win, RGB color, int x, int y, int width, int height)
+void drawRect(Window *win, RGB color, int x, int y, int width, int height)
 {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0 || x < 0 || y < 0 || width < 0 || height < 0)
     {
@@ -629,7 +632,7 @@ void drawRect(Window*win, RGB color, int x, int y, int width, int height)
     }
 }
 
-void drawFillRect(Window*win, RGBA color, int x, int y, int width, int height)
+void drawFillRect(Window *win, RGBA color, int x, int y, int width, int height)
 {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0 || x < 0 || y < 0 || width < 0 || height < 0)
     {
@@ -663,7 +666,7 @@ void drawFillRect(Window*win, RGBA color, int x, int y, int width, int height)
     }
 }
 
-void draw24FillRect(Window*win, RGB color, int x, int y, int width, int height)
+void draw24FillRect(Window *win, RGB color, int x, int y, int width, int height)
 {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0 || x < 0 || y < 0 || width < 0 || height < 0)
     {
@@ -698,13 +701,13 @@ void draw24FillRect(Window*win, RGB color, int x, int y, int width, int height)
     }
 }
 
-void drawImageWidget(Window*win, int index)
+void drawImageWidget(Window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
     draw24Image(win, w->context.image->image, w->size.x, w->size.y, w->size.width, w->size.height);
 }
 
-void drawTextAreaWidget(Window*win, int index)
+void drawTextAreaWidget(Window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
 
@@ -868,7 +871,7 @@ void drawTextAreaWidget(Window*win, int index)
     }
 }
 
-void drawFileListWidget(Window*win, int index)
+void drawFileListWidget(Window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
 
@@ -952,7 +955,7 @@ void drawFileListWidget(Window*win, int index)
     }
 }
 
-void drawAllWidget(Window*win)
+void drawAllWidget(Window *win)
 {
     int i;
     for (i = 0; i < win->widget_number; i++)
@@ -1244,7 +1247,7 @@ void generateHighlightRGB(Widget *w)
 // msg->params[1] & 2 == 2 Ctrl
 // msg->params[1] & 1 == 1 Shift
 
-void textAreaKeyDownHandler(Window*win, int index, Message *msg)
+void textAreaKeyDownHandler(Window *win, int index, Message *msg)
 {
     Widget *w = &(win->widgets[index]);
 
@@ -1858,7 +1861,7 @@ void textAreaKeyDownHandler(Window*win, int index, Message *msg)
             if (msg->params[0] == 's')
             {
                 int file = open(w->context.textArea->filename, 1 | O_CREATE);
-                write(file,w->context.textArea->text, MAX_LONG_STRLEN);
+                write(file, w->context.textArea->text, MAX_LONG_STRLEN);
                 close(file);
             }
 
@@ -2057,7 +2060,7 @@ void textAreaKeyDownHandler(Window*win, int index, Message *msg)
                 w->context.textArea->current_line--;
                 if (leftPos > insert_index - nextNewlineIndex)
                 {
-                    w->context.textArea->current_pos = insert_index - nextNewlineIndex -1;
+                    w->context.textArea->current_pos = insert_index - nextNewlineIndex - 1;
                 }
                 else
                 {
@@ -2110,15 +2113,19 @@ void textAreaKeyDownHandler(Window*win, int index, Message *msg)
                     break;
                 }
             }
-            for(int k =nextNewlineIndex+1;k<len;k++){
-                if(text[k]=='\n' || text[k]=='\0'){
+            for (int k = nextNewlineIndex + 1; k < len; k++)
+            {
+                if (text[k] == '\n' || text[k] == '\0')
+                {
                     break;
                 }
-                else{
+                else
+                {
                     leftPos++;
                 }
             }
-            if(leftPos< w->context.textArea->current_pos){
+            if (leftPos < w->context.textArea->current_pos)
+            {
                 w->context.textArea->current_pos = leftPos;
             }
             if ((msg->params[1] & 1) == 1)
@@ -2128,8 +2135,7 @@ void textAreaKeyDownHandler(Window*win, int index, Message *msg)
                     w->context.textArea->select_start_index = insert_index;
                 }
 
-                w->context.textArea->select_end_index = nextNewlineIndex + min(insert_index - beforeNewlineIndex - 1,leftPos);
-
+                w->context.textArea->select_end_index = nextNewlineIndex + min(insert_index - beforeNewlineIndex - 1, leftPos);
 
                 if (beforeNewlineIndex == 0 && text[beforeNewlineIndex] != '\n')
                 {
@@ -2229,7 +2235,7 @@ void textAreaKeyDownHandler(Window*win, int index, Message *msg)
     }
 }
 
-void fileListDoubleClickHandler(Window*win, int index, Message *msg)
+void fileListDoubleClickHandler(Window *win, int index, Message *msg)
 {
     Widget *w = &(win->widgets[index]);
 
@@ -2295,7 +2301,7 @@ int isInRect(int x, int y, WidgetSize size)
     return x >= size.x && x <= size.x + size.width && y >= size.y && y <= size.y + size.height;
 }
 
-void mainLoop(Window*win)
+void mainLoop(Window *win)
 {
     Message msg;
     while (1)

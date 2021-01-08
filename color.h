@@ -1,14 +1,16 @@
 #ifndef __COLOR_H__
 #define __COLOR_H__
 
-typedef struct RGBA {
+typedef struct RGBA
+{
     unsigned char B;
     unsigned char G;
     unsigned char R;
     unsigned char A;
 } RGBA;
 
-typedef struct RGB {
+typedef struct RGB
+{
     unsigned char B;
     unsigned char G;
     unsigned char R;

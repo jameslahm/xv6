@@ -6,17 +6,20 @@
 #include "color.h"
 #include "bitmap.h"
 
-void readBitmapHeader(int bmpFile, BITMAP_FILE_HEADER *bmpFileHeader, BITMAP_INFO_HEADER *bmpInfoHeader) {
+void readBitmapHeader(int bmpFile, BITMAP_FILE_HEADER *bmpFileHeader, BITMAP_INFO_HEADER *bmpInfoHeader)
+{
     // Read Bitmap file header
     read(bmpFile, bmpFileHeader, sizeof(BITMAP_FILE_HEADER));
     // Read Bitmap info header
     read(bmpFile, bmpInfoHeader, sizeof(BITMAP_INFO_HEADER));
 }
 
-int readBitmapFile(char *fileName, RGBA *result, int *height, int *width) {
+int readBitmapFile(char *fileName, RGBA *result, int *height, int *width)
+{
     int i;
     int bmpFile = open(fileName, 0);
-    if (bmpFile < 0) {
+    if (bmpFile < 0)
+    {
         return -1;
     }
 
@@ -31,18 +34,24 @@ int readBitmapFile(char *fileName, RGBA *result, int *height, int *width) {
     int bits = bmpInfoHeader.biBitCount;
     char tmpBytes[3];
     int rowBytes = column * bits / 8;
-    char *buf = (char *) result;
-    for (i = 0; i < row; i++) {
-        if (bits == 32) {
+    char *buf = (char *)result;
+    for (i = 0; i < row; i++)
+    {
+        if (bits == 32)
+        {
             read(bmpFile, buf + i * rowBytes, rowBytes);
-        } else {
+        }
+        else
+        {
             int j = 0;
-            for (j = 0; j < column; j++) {
+            for (j = 0; j < column; j++)
+            {
                 read(bmpFile, buf + i * column * 4 + j * sizeof(RGBA), 3);
                 *(buf + i * column * 4 + j * sizeof(RGBA) + 3) = 255;
             }
         }
-        if (rowBytes % 4 > 0) {
+        if (rowBytes % 4 > 0)
+        {
             read(bmpFile, tmpBytes, 4 - (rowBytes % 4));
         }
     }
@@ -51,10 +60,12 @@ int readBitmapFile(char *fileName, RGBA *result, int *height, int *width) {
     return 0;
 }
 
-int read24BitmapFile(char *fileName, RGB *result, int *height, int *width) {
+int read24BitmapFile(char *fileName, RGB *result, int *height, int *width)
+{
     int i;
     int bmpFile = open(fileName, 0);
-    if (bmpFile < 0) {
+    if (bmpFile < 0)
+    {
         return -1;
     }
 
@@ -69,19 +80,25 @@ int read24BitmapFile(char *fileName, RGB *result, int *height, int *width) {
     int bits = bmpInfoHeader.biBitCount;
     char tmpBytes[3];
     int rowBytes = column * 3;
-    char *buf = (char *) result;
-    for (i = 0; i < row; i++) {
-        if (bits == 24) {
+    char *buf = (char *)result;
+    for (i = 0; i < row; i++)
+    {
+        if (bits == 24)
+        {
             read(bmpFile, buf + i * rowBytes, rowBytes);
-        } else {
+        }
+        else
+        {
             int j = 0;
-            for (j = 0; j < column; j++) {
+            for (j = 0; j < column; j++)
+            {
                 read(bmpFile, buf + i * column * 3 + j * sizeof(RGB), 3);
                 read(bmpFile, tmpBytes, 1);
             }
         }
 
-        if (rowBytes % 4 > 0) {
+        if (rowBytes % 4 > 0)
+        {
             read(bmpFile, tmpBytes, 4 - (rowBytes % 4));
         }
     }
@@ -89,4 +106,3 @@ int read24BitmapFile(char *fileName, RGB *result, int *height, int *width) {
     close(bmpFile);
     return 0;
 }
-

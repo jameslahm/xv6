@@ -7,7 +7,6 @@
 
 #include "color.h"
 
-
 #endif
 
 #endif

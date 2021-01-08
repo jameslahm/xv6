@@ -20,7 +20,8 @@
 #define WM_WINDOW_CLOSE 100
 #define WM_WINDOW_REDRAW 101
 
-typedef struct Message {
+typedef struct Message
+{
 	int msg_type;
 	int params[10];
 } Message;
