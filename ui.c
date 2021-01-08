@@ -1794,12 +1794,15 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                 int text_len = strlen(text);
                 int linesNum = 0;
                 int leftPos = 0;
-                for(int i=0;i<text_len;i++){
-                    if(text[i]=='\n'){
+                for (int i = 0; i < text_len; i++)
+                {
+                    if (text[i] == '\n')
+                    {
                         linesNum++;
-                        leftPos=0;
+                        leftPos = 0;
                     }
-                    else{
+                    else
+                    {
                         leftPos++;
                     }
                 }
@@ -2116,10 +2119,42 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         if (msg->params[0] == KEY_UP)
         {
             int insert_index = w->context.textArea->insert_index;
+            int nextNewlineIndex = 0;
+            char *text = w->context.textArea->text;
+            for (int k = insert_index - 1; k >= 0; k--)
+            {
+                if (text[k] == '\n')
+                {
+                    nextNewlineIndex = k;
+                    break;
+                }
+            }
+            int beforeNewlineIndex = 0;
+            int leftPos = 0;
+            for (int k = nextNewlineIndex - 1; k >= 0; k--)
+            {
+                if (text[k] == '\n')
+                {
+                    beforeNewlineIndex = k;
+                    break;
+                }
+                else
+                {
+                    leftPos++;
+                }
+            }
 
             if (w->context.textArea->current_line >= 1)
             {
                 w->context.textArea->current_line--;
+                if (leftPos > insert_index - nextNewlineIndex)
+                {
+                    w->context.textArea->current_pos = insert_index - nextNewlineIndex -1;
+                }
+                else
+                {
+                    w->context.textArea->current_pos = leftPos;
+                }
             }
             if ((msg->params[1] & 1) == 1)
             {
@@ -2128,28 +2163,7 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
                     w->context.textArea->select_end_index = insert_index - 1;
                 }
 
-                // w->context.textArea->select_start_index = insert_index;
-                // TODO: fix
-                int nextNewlineIndex = 0;
-                char *text = w->context.textArea->text;
-                for (int k = insert_index - 1; k >= 0; k--)
-                {
-                    if (text[k] == '\n')
-                    {
-                        nextNewlineIndex = k;
-                        break;
-                    }
-                }
-                int beforeNewlineIndex = 0;
-                for (int k = nextNewlineIndex - 1; k >= 0; k--)
-                {
-                    if (text[k] == '\n')
-                    {
-                        beforeNewlineIndex = k;
-                        break;
-                    }
-                }
-                w->context.textArea->select_start_index = beforeNewlineIndex + insert_index - nextNewlineIndex;
+                w->context.textArea->select_start_index = beforeNewlineIndex + min(insert_index - nextNewlineIndex + 1, leftPos + 1);
                 if (beforeNewlineIndex == 0 && text[beforeNewlineIndex] != '\n')
                 {
                     w->context.textArea->select_start_index -= 1;
@@ -2168,34 +2182,47 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
         {
             int insert_index = w->context.textArea->insert_index;
             w->context.textArea->current_line++;
+            int beforeNewlineIndex = 0;
+            char *text = w->context.textArea->text;
+            for (int k = insert_index - 1; k >= 0; k--)
+            {
+                if (text[k] == '\n')
+                {
+                    beforeNewlineIndex = k;
+                    break;
+                }
+            }
+            int nextNewlineIndex = 0;
+            int leftPos = 0;
+            for (int k = insert_index; k < len; k++)
+            {
+                if (text[k] == '\n')
+                {
+                    nextNewlineIndex = k;
+                    break;
+                }
+            }
+            for(int k =nextNewlineIndex+1;k<len;k++){
+                if(text[k]=='\n' || text[k]=='\0'){
+                    break;
+                }
+                else{
+                    leftPos++;
+                }
+            }
+            if(leftPos< w->context.textArea->current_pos){
+                w->context.textArea->current_pos = leftPos;
+            }
             if ((msg->params[1] & 1) == 1)
             {
                 if (w->context.textArea->select_start_index < 0)
                 {
                     w->context.textArea->select_start_index = insert_index;
                 }
-                // w->context.textArea->select_start_index = insert_index -1;
-                // TODO: fix
-                int beforeNewlineIndex = 0;
-                char *text = w->context.textArea->text;
-                for (int k = insert_index - 1; k >= 0; k--)
-                {
-                    if (text[k] == '\n')
-                    {
-                        beforeNewlineIndex = k;
-                        break;
-                    }
-                }
-                int nextNewlineIndex = 0;
-                for (int k = insert_index; k < len; k++)
-                {
-                    if (text[k] == '\n')
-                    {
-                        nextNewlineIndex = k;
-                        break;
-                    }
-                }
-                w->context.textArea->select_end_index = nextNewlineIndex + insert_index - beforeNewlineIndex - 1;
+
+                w->context.textArea->select_end_index = nextNewlineIndex + min(insert_index - beforeNewlineIndex - 1,leftPos);
+
+
                 if (beforeNewlineIndex == 0 && text[beforeNewlineIndex] != '\n')
                 {
                     w->context.textArea->select_end_index += 1;
