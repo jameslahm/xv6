@@ -11,8 +11,8 @@
 - [x] Ctrl-S
 - [x] Ctrl-Home
 - [x] Ctrl-End
-- [x] Ctrl-F
+- [x] Ctrl-F (Tab Shift-Tab Enter Esc)
 - [x] Ctrl++
 - [x] Ctrl+-
-- [x] Terminal
+- [x] Terminal (Ctrl-` Esc)
 - [x] Batch delete
