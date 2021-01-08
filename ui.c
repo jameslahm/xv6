@@ -315,9 +315,17 @@ void UI_ls(char *path, Widget *widget)
             continue;
         }
         tmpName = UI_fmtname(buf);
-        printf(1, "%s\n", tmpName);
-        if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0)
+        if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0 )
         {
+            continue;
+        }
+        int flag = 0;
+        for(int k=0;k<FILE_TYPE_NUM;k++){
+            if(strcmp(tmpName,file_image_path[k])==0){
+                flag=1;
+            }
+        }
+        if(flag){
             continue;
         }
         IconView *iconView = malloc(sizeof(IconView));
@@ -976,10 +984,10 @@ void drawFileListWidget(window *win, int index)
     IconView *p = w->context.fileList->file_list;
     int i;
     RGBA white;
-    white.A = 255;
-    white.R = 180;
-    white.G = 180;
-    white.B = 120;
+    white.A = 200;
+    white.R = 255;
+    white.G = 255;
+    white.B = 255;
     for (i = 0; i < w->context.fileList->file_num; i++)
     {
         drawImage(win, p->image, offset_x + current_x * ICON_VIEW_SIZE + 13,
