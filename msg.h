@@ -1,5 +1,3 @@
-// message definitions and constants
-
 #ifndef __MSG_H__
 #define __MSG_H__
 
@@ -22,10 +20,9 @@
 #define WM_WINDOW_CLOSE 100
 #define WM_WINDOW_REDRAW 101
 
-typedef struct message {
+typedef struct Message {
 	int msg_type;
 	int params[10];
-} message;
+} Message;
 
 #endif
-

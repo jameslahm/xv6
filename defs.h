@@ -10,14 +10,11 @@ struct stat;
 struct superblock;
 struct RGB;
 struct RGBA;
-struct message;
+struct Message;
 
 //wm.c
 void            wmInit(void);
-void            wmHandleMessage(struct message*);
-
-//msg.c
-int             handleMessage(struct message*);
+void            wmHandleMessage(struct Message*);
 
 // gui.c
 extern ushort   SCREEN_WIDTH;

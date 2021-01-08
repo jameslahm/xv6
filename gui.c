@@ -19,7 +19,11 @@ RGB *screen = 0;
 RGB *screen_buf1 = 0;
 RGB *screen_buf2 = 0;
 
+ushort SCREEN_WIDTH;
+ushort SCREEN_HEIGHT;
+
 void initGUI() {
+    int screen_size;
     uint GraphicMem = KERNBASE + 0x1028;
     uint baseAdd = *((uint *) GraphicMem);
     screen = (RGB *) baseAdd;

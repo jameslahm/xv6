@@ -6,25 +6,25 @@
 #define MSG_BUF_SIZE 50
 #define MAX_TITLE_LEN 50
 
-typedef struct win_rect
+typedef struct WinRect
 {
 	int xmin, xmax, ymin, ymax;
-} win_rect;
+} WinRect;
 
-typedef struct msg_buf
+typedef struct MsgBuf
 {
-	message data[MSG_BUF_SIZE];
+	Message data[MSG_BUF_SIZE];
 	int front, rear, cnt;
-} msg_buf;
+} MsgBuf;
 
-typedef struct window
+typedef struct Window
 {
-	win_rect contents;
-	win_rect titlebar;
-	msg_buf buf;
+	WinRect contents;
+	WinRect titlebar;
+	MsgBuf buf;
 	struct RGB *content_buf;
 	int alwaysfront;
 	char title[MAX_TITLE_LEN];
-} window;
+} Window;
 
 #endif

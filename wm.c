@@ -4,7 +4,7 @@
 #include "defs.h"
 #include "msg.h"
 #include "spinlock.h"
-#include "gui.h"
+#include "color.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
@@ -15,12 +15,12 @@ int min(int x, int y) { return x < y ? x : y; }
 int max(int x, int y) { return x > y ? x : y; }
 int clamp(int x, int l, int r) { return min(r, max(l, x)); }
 
-int isInRect(win_rect *rect, int x, int y)
+int isInRect(WinRect *rect, int x, int y)
 {
 	return (x >= rect->xmin && x <= rect->xmax && y >= rect->ymin && y <= rect->ymax);
 }
 
-void createRectBySize(win_rect *rect, int xmin, int ymin, int width, int height)
+void createRectBySize(WinRect *rect, int xmin, int ymin, int width, int height)
 {
 	rect->xmin = xmin;
 	rect->xmax = xmin + width;
@@ -29,7 +29,7 @@ void createRectBySize(win_rect *rect, int xmin, int ymin, int width, int height)
 }
 
 //return non-zero if buf is full
-int enqueue(msg_buf *buf, message *msg)
+int enqueue(MsgBuf *buf, Message *msg)
 {
 	if (buf->cnt >= MSG_BUF_SIZE) return 1;
 	++buf->cnt;
@@ -39,7 +39,7 @@ int enqueue(msg_buf *buf, message *msg)
 }
 
 //return non-zero if buf is empty
-int dequeue(msg_buf *buf, message *result)
+int dequeue(MsgBuf *buf, Message *result)
 {
 	if (buf->cnt == 0) return 1;
 	--buf->cnt;
@@ -48,7 +48,7 @@ int dequeue(msg_buf *buf, message *result)
 	return 0;
 }
 
-void initqueue(msg_buf *buf)
+void initqueue(MsgBuf *buf)
 {
 	buf->front = buf->rear = buf->cnt = 0;
 }
@@ -59,7 +59,7 @@ void initqueue(msg_buf *buf)
 static struct
 {
 	struct proc* proc;
-	window wnd;
+	Window wnd;
 	int next, prev;
 } windowlist[MAX_WINDOW_CNT];
 
@@ -121,9 +121,9 @@ void wmInit()
 	initlock(&wmlock, "wmlock");
 }
 
-void getWindowRect(int handler, win_rect *res)
+void getWindowRect(int handler, WinRect *res)
 {
-    window *wnd = &windowlist[handler].wnd;
+    Window *wnd = &windowlist[handler].wnd;
     res->xmin = wnd->titlebar.xmin;
     res->ymin = wnd->titlebar.ymin;
     res->xmax = wnd->titlebar.xmax;
@@ -133,7 +133,7 @@ void getWindowRect(int handler, win_rect *res)
 // draw close icon
 
 
-void drawWindowBar(struct RGB *dst, window *wnd, struct RGBA barcolor)
+void drawWindowBar(struct RGB *dst, Window *wnd, struct RGBA barcolor)
 {  
     struct RGBA closecolor, txtcolor;
     closecolor.R = 200; closecolor.G = 50; closecolor.B = 10; closecolor.A = 255;
@@ -150,7 +150,7 @@ void drawWindowBar(struct RGB *dst, window *wnd, struct RGBA barcolor)
 
 void drawWindow(int layer, int handler, int refresh)
 {
-	window *wnd = &windowlist[handler].wnd;
+	Window *wnd = &windowlist[handler].wnd;
     struct RGBA barcolor, wndcolor;
     barcolor.R = 74; barcolor.G = 134; barcolor.B = 232; barcolor.A = 255;
     if (layer == 2) barcolor.R = barcolor.G = barcolor.B = 140;
@@ -179,12 +179,12 @@ void drawWindow(int layer, int handler, int refresh)
             clearRectByCoord(screen, screen_buf1, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3);
     }
 
-    //TODO fire REDRAW message to application
+    //TODO fire REDRAW Message to application
 }
 
 void refreshWindowScreen(int layer, int handler)
 {
-    window *wnd = &windowlist[handler].wnd;
+    Window *wnd = &windowlist[handler].wnd;
     struct RGB *dst;
     if (layer == 2) dst = screen_buf2;
     else if (layer == 1) dst = screen_buf1;
@@ -236,7 +236,7 @@ void focusWindow(int handler)
 	focus = handler;
 }
 
-//return window handler on succuss, -1 if unsuccessful
+//return Window handler on succuss, -1 if unsuccessful
 int createWindow(int width, int height, const char *title, struct RGB *buf, int alwaysfront)
 {
 	if (emptyhead == -1) return -1;
@@ -251,7 +251,7 @@ int createWindow(int width, int height, const char *title, struct RGB *buf, int 
 	addToListHead(&windowlisthead, idx);
 
 	initqueue(&windowlist[idx].wnd.buf);
-	//initial window position according to idx
+	//initial Window position according to idx
 	// int offsetX = (100 + idx * 47) % (SCREEN_WIDTH - 130) + 30;
 	// int offsetY = (100 + idx * 33) % (SCREEN_HEIGHT - 130) + 30;
 	int offsetX = 10;
@@ -286,7 +286,7 @@ int createWindow(int width, int height, const char *title, struct RGB *buf, int 
 
 int createDesktopWindow()
 {
-	//TODO create full-screen window without titlebar
+	//TODO create full-screen Window without titlebar
 	return 0;
 }
 
@@ -295,15 +295,15 @@ void destroyWindow(int handler)
     acquire(&wmlock);
 
     if (handler != focus) focusWindow(handler);
-    //clear window on screen
-    window *wnd = &windowlist[handler].wnd;
+    //clear Window on screen
+    Window *wnd = &windowlist[handler].wnd;
     clearRectByCoord(screen_buf1, screen_buf2, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3);
     clearRectByCoord(screen, screen_buf1, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3);
     drawMouse(screen, 0, wm_mouse_pos.x, wm_mouse_pos.y);
     
     if (wnd->alwaysfront) --frontcnt;
 
-    //choose next window to focus
+    //choose next Window to focus
     int newfocus = windowlist[handler].next;
     removeFromList(&windowlisthead, handler);
     addToListHead(&emptyhead, handler);
@@ -316,12 +316,12 @@ void destroyWindow(int handler)
 #define MOUSE_SPEED_X 0.6f
 #define MOUSE_SPEED_Y -0.6f;
 
-void dispatchMessage(int handler, message *msg)
+void dispatchMessage(int handler, Message *msg)
 {
 	enqueue(&windowlist[handler].wnd.buf, msg);
 }
 
-void moveRect(win_rect *rect, int dx, int dy)
+void moveRect(WinRect *rect, int dx, int dy)
 {
     rect->xmin += dx;
     rect->xmax += dx;
@@ -331,7 +331,7 @@ void moveRect(win_rect *rect, int dx, int dy)
 
 void wmMoveFocusWindow(int dx, int dy)
 {
-    win_rect winrect;
+    WinRect winrect;
     getWindowRect(focus, &winrect);
     clearRectByCoord(screen_buf1, screen_buf2, winrect.xmin, winrect.ymin, winrect.xmax, winrect.ymax);
     moveRect(&windowlist[focus].wnd.contents, dx, dy);
@@ -345,11 +345,11 @@ void wmMoveFocusWindow(int dx, int dy)
     drawMouse(screen, 0, wm_mouse_pos.x, wm_mouse_pos.y);
 }
 
-void wmHandleMessage(message *msg)
+void wmHandleMessage(Message *msg)
 {
 	acquire(&wmlock);
 
-	message newmsg;
+	Message newmsg;
 	int p;
 	switch (msg->msg_type)
 	{
@@ -461,7 +461,7 @@ void wmHandleMessage(message *msg)
 	release(&wmlock);
 }
 
-int hasIntersection(win_rect *ra, win_rect *rb)
+int hasIntersection(WinRect *ra, WinRect *rb)
 {
     int xmin = max(ra->xmin, rb->xmin);
     int ymin = max(ra->ymin, rb->ymin);
@@ -475,8 +475,8 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
 {
     acquire(&wmlock);
     
-    window *wnd = &windowlist[handler].wnd;
-    win_rect updrect;
+    Window *wnd = &windowlist[handler].wnd;
+    WinRect updrect;
     updrect.xmin = clamp(max(xmin, 0) + wnd->contents.xmin, 0, SCREEN_WIDTH);
     updrect.ymin = clamp(max(ymin, 0) + wnd->contents.ymin, 0, SCREEN_HEIGHT);
     updrect.xmax = clamp(min(xmin + width + wnd->contents.xmin, wnd->contents.xmax), 0, SCREEN_WIDTH);
@@ -501,7 +501,7 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
         return;
     }
     
-    static win_rect rects[MAX_WINDOW_CNT];
+    static WinRect rects[MAX_WINDOW_CNT];
     int rectcnt = 0;
     int p, i, j;
     for (p = windowlisthead; p != handler; p = windowlist[p].next)
@@ -569,7 +569,7 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
     mymax = ycount[updrect.ymax];
     int wndwidth = wnd->contents.xmax - wnd->contents.xmin;
     int wndheight = wnd->contents.ymax - wnd->contents.ymin;
-    win_rect cursubrect;
+    WinRect cursubrect;
     for (i = mxmin; i < mxmax; ++i)
         for (j = mymin; j < mymax; ++j)
         {
@@ -600,8 +600,8 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
     release(&wmlock);
 }
 
-//return number of message (0 if buf is empty, 1 if not)
-int wmGetMessage(int handler, message *res)
+//return number of Message (0 if buf is empty, 1 if not)
+int wmGetMessage(int handler, Message *res)
 {
 	if (handler < 0 || handler >= MAX_WINDOW_CNT) {
 		return 0;
@@ -642,9 +642,9 @@ int sys_destroywindow()
 int sys_getmessage()
 {
 	int h;
-	message *res;
+	Message *res;
 	argint(0, &h);
-	argptr(1, (char**)(&res), sizeof(message));
+	argptr(1, (char**)(&res), sizeof(Message));
 	return wmGetMessage(h, res);
 }
 
@@ -676,7 +676,7 @@ int sys_draw24Image() {
 	if (handler < 0 || handler >= MAX_WINDOW_CNT) {
 		return 1;
 	}
-	window *wnd = &windowlist[handler].wnd;
+	Window *wnd = &windowlist[handler].wnd;
 	draw24Image(screen_buf1, image, x + wnd->contents.xmin, y + wnd->contents.ymin,
 				width, height, wnd->contents.xmax, wnd->contents.ymax);
 	return 0;
