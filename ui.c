@@ -1790,8 +1790,22 @@ void textAreaKeyDownHandler(window *win, int index, message *msg)
 
             if (msg->params[0] == KEY_END)
             {
-                w->context.textArea->current_line = len / max_num;
-                w->context.textArea->current_pos = len % max_num;
+                char *text = w->context.textArea->text;
+                int text_len = strlen(text);
+                int linesNum = 0;
+                int leftPos = 0;
+                for(int i=0;i<text_len;i++){
+                    if(text[i]=='\n'){
+                        linesNum++;
+                        leftPos=0;
+                    }
+                    else{
+                        leftPos++;
+                    }
+                }
+                w->context.textArea->current_line = linesNum;
+                w->context.textArea->current_pos = leftPos;
+
                 drawTextAreaWidget(win, index);
                 updatePartWindow(win, w->size.x, w->size.y, w->size.width, w->size.height);
                 return;
