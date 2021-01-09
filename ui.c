@@ -24,12 +24,11 @@ char shift_ascii_map[128] =
     {
         [0x30] 0x29, [0x31] 0x21, [0x32] 0x40, [0x33] 0x23, [0x34] 0x24, [0x35] 0x25, [0x36] 0x5E, [0x37] 0x26, [0x38] 0x2A, [0x39] 0x28, [0x2D] 0x5F, [0x3D] 0x2B, [0x5B] 0x7B, [0x5D] 0x7D, [0x5C] 0x7C, [0x3B] 0x3A, [0x27] 0x22, [0x2F] 0x3F, [0x2C] 0x3C, [0x2E] 0x3E, [0x60] 0x7E};
 
+void fileListDoubleClickHandler(Window *win, int index, Message *msg);
+void textAreaKeyDownHandler(Window *win, int index, Message *msg);
 void drawImageWidget(Window *win, int index);
 void drawTextAreaWidget(Window *win, int index);
 void drawFileListWidget(Window *win, int index);
-
-void fileListDoubleClickHandler(Window *win, int index, Message *msg);
-void textAreaKeyDownHandler(Window *win, int index, Message *msg);
 
 
 int min(int a, int b)
@@ -288,319 +287,6 @@ void generateHighlightRGB(Widget *w)
         }
     }
 }
-
-
-void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content, char *old_content, int isBatch)
-{
-    if (type == ADD)
-    {
-        command_stack->stack[++command_stack->stack_pos].type = ADD;
-        command_stack->stack[command_stack->stack_pos].index = index;
-        command_stack->stack[command_stack->stack_pos].isBatch = isBatch;
-        char *buf = (char *)malloc(BUF_SIZE);
-        memset(buf, 0, BUF_SIZE);
-        strcpy(buf, content);
-        command_stack->stack[command_stack->stack_pos].content = buf;
-        command_stack->max_stack_pos = command_stack->stack_pos;
-    }
-    if (type == DEL)
-    {
-        command_stack->stack[++command_stack->stack_pos].type = DEL;
-        command_stack->stack[command_stack->stack_pos].index = index;
-        command_stack->stack[command_stack->stack_pos].isBatch = isBatch;
-        char *buf = (char *)malloc(BUF_SIZE);
-        memset(buf, 0, BUF_SIZE);
-        strcpy(buf, content);
-        command_stack->stack[command_stack->stack_pos].content = buf;
-        command_stack->max_stack_pos = command_stack->stack_pos;
-    }
-}
-
-char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {
-    "txt.bmp",
-    "pic.bmp",
-    "exec.bmp",
-    "folder.bmp",
-    "unknown.bmp"};
-
-void UI_createWindow(Window *win, const char *title, int alwaysfront)
-{
-    if (win->width > MAX_WIDTH || win->height > MAX_HEIGHT)
-    {
-        win->handler = -1;
-        return;
-    }
-    win->window_buf = malloc(win->width * win->height * 3);
-    if (!win->window_buf)
-    {
-        win->handler = -1;
-        return;
-    }
-    memset(win->window_buf, 255, win->height * win->width * 3);
-    win->handler = createwindow(win->width, win->height, title, win->window_buf, alwaysfront);
-}
-
-void freeWidget(Widget *widget)
-{
-    switch (widget->type)
-    {
-    case IMAGE:
-        free(widget->context.image);
-        break;
-    case TEXT_AREA:
-        free(widget->context.textArea);
-        break;
-    default:
-        free(widget->context.fileList);
-        break;
-    }
-}
-
-void UI_destroyWindow(Window *win)
-{
-    free(win->window_buf);
-    int i;
-    for (i = 0; i < win->widget_number; i++)
-    {
-        if (win->widgets[i].type == FILE_LIST)
-        {
-            Icon *p;
-            Icon *temp;
-            for (p = win->widgets[i].context.fileList->file_list; p; p = temp)
-            {
-                temp = p->next;
-                free(p);
-            }
-            int j;
-            for (j = 0; j < FILE_TYPE_NUM; j++)
-            {
-                free(win->widgets[i].context.fileList->image[j]);
-            }
-        }
-        freeWidget(&win->widgets[i]);
-    }
-    destroywindow(win->handler);
-}
-
-// system call
-void updatePartWindow(Window *win, int x, int y, int w, int h)
-{
-    updatewindow(win->handler, x, y, w, h);
-}
-
-void setWidgetSize(Widget *widget, int x, int y, int w, int h)
-{
-    widget->size.x = x;
-    widget->size.y = y;
-    widget->size.height = h;
-    widget->size.width = w;
-}
-
-int addImageWidget(Window *win, RGB *image, int x, int y, int w, int h)
-{
-    if (win->widget_number >= MAX_WIDGET)
-    {
-        return -1;
-    }
-    Image *i = malloc(sizeof(Image));
-    i->image = image;
-    Widget *widget = &win->widgets[win->widget_number];
-    widget->paint = drawImageWidget;
-    widget->type = IMAGE;
-    widget->context.image = i;
-    setWidgetSize(widget, x, y, w, h);
-    win->widget_number++;
-    return (win->widget_number - 1);
-}
-
-int addTextAreaWidget(Window *win, RGBA c, char *text, int x, int y, int w, int h, char *name)
-{
-    if (win->widget_number >= MAX_WIDGET)
-    {
-        return -1;
-    }
-    TextArea *t = malloc(sizeof(TextArea));
-    t->color = c;
-    for (int i = 0; i < MAX_LONG_STRLEN; i++)
-    {
-        t->colors[i] = c;
-    }
-    strcpy(t->filename, name);
-    t->current_pos = 0;
-    t->current_line = 0;
-    t->select_start_index = -2;
-    t->select_end_index = -2;
-    t->isCopying = 0;
-    t->begin_line = 0;
-    t->scale = 1;
-    t->temp = 0;
-    for (int i = 0; i < MAX_LONG_STRLEN; i++)
-    {
-        t->command_stack.stack[i].isBatch = 0;
-    }
-    memset(t->search_text, 0, BUF_SIZE);
-    memset(t->replace_text, 0, BUF_SIZE);
-    strcpy(t->text, text);
-    t->onKeyDown = textAreaKeyDownHandler;
-    Widget *widget = &win->widgets[win->widget_number];
-    widget->paint = drawTextAreaWidget;
-    widget->context.textArea = t;
-    widget->type = TEXT_AREA;
-    setWidgetSize(widget, x, y, w, h);
-    win->widget_number++;
-    return (win->widget_number - 1);
-}
-
-char *UI_fmtname(char *path)
-{
-    char *p;
-    // Find first character after last slash.
-    for (p = path + strlen(path); p >= path && *p != '/'; p--)
-        ;
-    p++;
-    return p;
-}
-
-void UI_ls(char *path, Widget *widget)
-{
-    char buf[512], *p, *tmpName;
-    int fd;
-    struct dirent de;
-    struct stat st;
-    Icon *node = 0;
-    int j;
-    if ((fd = open(path, 0)) < 0)
-    {
-        return;
-    }
-    if (fstat(fd, &st) < 0)
-    {
-        return;
-    }
-    strcpy(buf, path);
-    p = buf + strlen(buf);
-    *p++ = '/';
-    if (widget->context.fileList->file_list)
-    {
-        Icon *node = widget->context.fileList->file_list;
-        for (int i = 0; i < widget->context.fileList->file_num; i++)
-        {
-            Icon *tmp = node->next;
-            free(node);
-            node = tmp;
-        }
-        widget->context.fileList->file_list = 0;
-    }
-    printf(1, "FileList: %d\n", widget->context.fileList->file_list);
-    while (read(fd, &de, sizeof(de)) == sizeof(de))
-    {
-        if (de.inum == 0)
-        {
-            continue;
-        }
-        memmove(p, de.name, DIRSIZ);
-        p[DIRSIZ] = 0;
-        if (stat(buf, &st) < 0)
-        {
-            continue;
-        }
-        tmpName = UI_fmtname(buf);
-        if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0)
-        {
-            continue;
-        }
-        int flag = 0;
-        for (int k = 0; k < FILE_TYPE_NUM; k++)
-        {
-            if (strcmp(tmpName, file_image_path[k]) == 0)
-            {
-                flag = 1;
-            }
-        }
-        if (flag)
-        {
-            continue;
-        }
-        Icon *iconView = malloc(sizeof(Icon));
-        iconView->next = 0;
-        for (j = 0; j < strlen(tmpName); j++)
-        {
-            if (tmpName[j] == '.')
-                break;
-        }
-        switch (st.type)
-        {
-        case T_DIR:
-            iconView->image = widget->context.fileList->image[FOLDER_FILE];
-            break;
-        case T_FILE:
-            if (strcmp(tmpName, "README") == 0)
-                iconView->image = widget->context.fileList->image[UNKNOWN_FILE];
-            else if (tmpName[j + 1] == 'b' && tmpName[j + 2] == 'm' && tmpName[j + 3] == 'p')
-                iconView->image = widget->context.fileList->image[BMP_FILE];
-            else if (tmpName[j + 1] == 't' && tmpName[j + 2] == 'x' && tmpName[j + 3] == 't')
-                iconView->image = widget->context.fileList->image[TEXT_FILE];
-            else
-                iconView->image = widget->context.fileList->image[EXEC_FILE];
-            break;
-        }
-        strcpy(iconView->text, tmpName);
-        if (!widget->context.fileList->file_list)
-        {
-            widget->context.fileList->file_list = iconView;
-        }
-        if (!node)
-        {
-            node = iconView;
-        }
-        else
-        {
-            node->next = iconView;
-            node = iconView;
-        }
-        widget->context.fileList->file_num += 1;
-    }
-}
-
-int addFileListWidget(Window *win, char *path, int direction, int x, int y, int w, int h)
-{
-    if (win->widget_number >= MAX_WIDGET)
-    {
-        return -1;
-    }
-    FileList *f = malloc(sizeof(FileList));
-    f->direction = direction;
-    f->file_num = 0;
-    strcpy(f->path, path);
-    int i;
-    int res;
-    int temp_w, temp_h;
-    for (i = 0; i < FILE_TYPE_NUM; i++)
-    { // read file
-        (f->image[i]) = (RGBA *)malloc(ICON_IMG_SIZE * ICON_IMG_SIZE * 4);
-        res = readBitmapFile(file_image_path[i], f->image[i], &temp_h, &temp_w);
-        if (res < 0)
-        {
-            printf(1, "read file image error \n");
-            for (i--; i >= 0; i--)
-            {
-                free(f->image[i]);
-            }
-            return -1;
-        }
-    }
-    f->onDoubleClick = fileListDoubleClickHandler;
-    Widget *widget = &win->widgets[win->widget_number];
-    widget->paint = drawFileListWidget;
-    widget->context.fileList = f;
-    widget->type = FILE_LIST;
-    setWidgetSize(widget, x, y, w, h);
-    UI_ls(path, widget);
-    win->widget_number++;
-    return (win->widget_number - 1);
-}
-
-// paint function
 
 void drawPointAlpha(RGB *color, RGBA origin)
 {
@@ -958,6 +644,274 @@ void draw24FillRect(Window *win, RGB color, int x, int y, int width, int height)
             memmove(o, t, max_line * 3);
         }
     }
+}
+
+
+void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content, char *old_content, int isBatch)
+{
+    if (type == ADD)
+    {
+        command_stack->stack[++command_stack->stack_pos].type = ADD;
+        command_stack->stack[command_stack->stack_pos].index = index;
+        command_stack->stack[command_stack->stack_pos].isBatch = isBatch;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = buf;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+    if (type == DEL)
+    {
+        command_stack->stack[++command_stack->stack_pos].type = DEL;
+        command_stack->stack[command_stack->stack_pos].index = index;
+        command_stack->stack[command_stack->stack_pos].isBatch = isBatch;
+        char *buf = (char *)malloc(BUF_SIZE);
+        memset(buf, 0, BUF_SIZE);
+        strcpy(buf, content);
+        command_stack->stack[command_stack->stack_pos].content = buf;
+        command_stack->max_stack_pos = command_stack->stack_pos;
+    }
+}
+
+char file_image_path[FILE_TYPE_NUM][MAX_SHORT_STRLEN] = {
+    "txt.bmp",
+    "pic.bmp",
+    "exec.bmp",
+    "folder.bmp",
+    "unknown.bmp"};
+
+void UI_createWindow(Window *win, const char *title, int alwaysfront)
+{
+    if (win->width > MAX_WIDTH || win->height > MAX_HEIGHT)
+    {
+        win->handler = -1;
+        return;
+    }
+    win->window_buf = malloc(win->width * win->height * 3);
+    if (!win->window_buf)
+    {
+        win->handler = -1;
+        return;
+    }
+    memset(win->window_buf, 255, win->height * win->width * 3);
+    win->handler = createwindow(win->width, win->height, title, win->window_buf, alwaysfront);
+}
+
+void updatePartWindow(Window *win, int x, int y, int w, int h)
+{
+    updatewindow(win->handler, x, y, w, h);
+}
+
+void setWidgetSize(Widget *widget, int x, int y, int w, int h)
+{
+    widget->size.x = x;
+    widget->size.y = y;
+    widget->size.height = h;
+    widget->size.width = w;
+}
+
+int addImageWidget(Window *win, RGB *image, int x, int y, int w, int h)
+{
+    if (win->widget_number >= MAX_WIDGET)
+    {
+        return -1;
+    }
+    Image *i = malloc(sizeof(Image));
+    i->image = image;
+    Widget *widget = &win->widgets[win->widget_number];
+    widget->paint = drawImageWidget;
+    widget->type = IMAGE;
+    widget->context.image = i;
+    setWidgetSize(widget, x, y, w, h);
+    win->widget_number++;
+    return (win->widget_number - 1);
+}
+
+int addTextAreaWidget(Window *win, RGBA c, char *text, int x, int y, int w, int h, char *name)
+{
+    if (win->widget_number >= MAX_WIDGET)
+    {
+        return -1;
+    }
+    TextArea *t = malloc(sizeof(TextArea));
+    t->color = c;
+    for (int i = 0; i < MAX_LONG_STRLEN; i++)
+    {
+        t->colors[i] = c;
+    }
+    strcpy(t->filename, name);
+    t->current_pos = 0;
+    t->current_line = 0;
+    t->select_start_index = -2;
+    t->select_end_index = -2;
+    t->isCopying = 0;
+    t->begin_line = 0;
+    t->scale = 1;
+    t->temp = 0;
+    for (int i = 0; i < MAX_LONG_STRLEN; i++)
+    {
+        t->command_stack.stack[i].isBatch = 0;
+    }
+    memset(t->search_text, 0, BUF_SIZE);
+    memset(t->replace_text, 0, BUF_SIZE);
+    strcpy(t->text, text);
+    t->onKeyDown = textAreaKeyDownHandler;
+    Widget *widget = &win->widgets[win->widget_number];
+    widget->paint = drawTextAreaWidget;
+    widget->context.textArea = t;
+    widget->type = TEXT_AREA;
+    setWidgetSize(widget, x, y, w, h);
+    win->widget_number++;
+    return (win->widget_number - 1);
+}
+
+char *UI_fmtname(char *path)
+{
+    char *p;
+    // Find first character after last slash.
+    for (p = path + strlen(path); p >= path && *p != '/'; p--)
+        ;
+    p++;
+    return p;
+}
+
+void UI_ls(char *path, Widget *widget)
+{
+    char buf[512], *p, *tmpName;
+    int fd;
+    struct dirent de;
+    struct stat st;
+    Icon *node = 0;
+    int j;
+    if ((fd = open(path, 0)) < 0)
+    {
+        return;
+    }
+    if (fstat(fd, &st) < 0)
+    {
+        return;
+    }
+    strcpy(buf, path);
+    p = buf + strlen(buf);
+    *p++ = '/';
+    if (widget->context.fileList->file_list)
+    {
+        Icon *node = widget->context.fileList->file_list;
+        for (int i = 0; i < widget->context.fileList->file_num; i++)
+        {
+            Icon *tmp = node->next;
+            free(node);
+            node = tmp;
+        }
+        widget->context.fileList->file_list = 0;
+    }
+    printf(1, "FileList: %d\n", widget->context.fileList->file_list);
+    while (read(fd, &de, sizeof(de)) == sizeof(de))
+    {
+        if (de.inum == 0)
+        {
+            continue;
+        }
+        memmove(p, de.name, DIRSIZ);
+        p[DIRSIZ] = 0;
+        if (stat(buf, &st) < 0)
+        {
+            continue;
+        }
+        tmpName = UI_fmtname(buf);
+        if (strcmp(tmpName, ".") == 0 || strcmp(tmpName, "..") == 0 || strcmp(tmpName, "desktop") == 0 || st.type == T_DEV || strcmp(tmpName, "desktop.bmp") == 0 || strcmp(tmpName, "init") == 0)
+        {
+            continue;
+        }
+        int flag = 0;
+        for (int k = 0; k < FILE_TYPE_NUM; k++)
+        {
+            if (strcmp(tmpName, file_image_path[k]) == 0)
+            {
+                flag = 1;
+            }
+        }
+        if (flag)
+        {
+            continue;
+        }
+        Icon *iconView = malloc(sizeof(Icon));
+        iconView->next = 0;
+        for (j = 0; j < strlen(tmpName); j++)
+        {
+            if (tmpName[j] == '.')
+                break;
+        }
+        switch (st.type)
+        {
+        case T_DIR:
+            iconView->image = widget->context.fileList->image[FOLDER_FILE];
+            break;
+        case T_FILE:
+            if (strcmp(tmpName, "README") == 0)
+                iconView->image = widget->context.fileList->image[UNKNOWN_FILE];
+            else if (tmpName[j + 1] == 'b' && tmpName[j + 2] == 'm' && tmpName[j + 3] == 'p')
+                iconView->image = widget->context.fileList->image[BMP_FILE];
+            else if (tmpName[j + 1] == 't' && tmpName[j + 2] == 'x' && tmpName[j + 3] == 't')
+                iconView->image = widget->context.fileList->image[TEXT_FILE];
+            else
+                iconView->image = widget->context.fileList->image[EXEC_FILE];
+            break;
+        }
+        strcpy(iconView->text, tmpName);
+        if (!widget->context.fileList->file_list)
+        {
+            widget->context.fileList->file_list = iconView;
+        }
+        if (!node)
+        {
+            node = iconView;
+        }
+        else
+        {
+            node->next = iconView;
+            node = iconView;
+        }
+        widget->context.fileList->file_num += 1;
+    }
+}
+
+int addFileListWidget(Window *win, char *path, int direction, int x, int y, int w, int h)
+{
+    if (win->widget_number >= MAX_WIDGET)
+    {
+        return -1;
+    }
+    FileList *f = malloc(sizeof(FileList));
+    f->direction = direction;
+    f->file_num = 0;
+    strcpy(f->path, path);
+    int i;
+    int res;
+    int temp_w, temp_h;
+    for (i = 0; i < FILE_TYPE_NUM; i++)
+    { // read file
+        (f->image[i]) = (RGBA *)malloc(ICON_IMG_SIZE * ICON_IMG_SIZE * 4);
+        res = readBitmapFile(file_image_path[i], f->image[i], &temp_h, &temp_w);
+        if (res < 0)
+        {
+            printf(1, "read file image error \n");
+            for (i--; i >= 0; i--)
+            {
+                free(f->image[i]);
+            }
+            return -1;
+        }
+    }
+    f->onDoubleClick = fileListDoubleClickHandler;
+    Widget *widget = &win->widgets[win->widget_number];
+    widget->paint = drawFileListWidget;
+    widget->context.fileList = f;
+    widget->type = FILE_LIST;
+    setWidgetSize(widget, x, y, w, h);
+    UI_ls(path, widget);
+    win->widget_number++;
+    return (win->widget_number - 1);
 }
 
 void drawImageWidget(Window *win, int index)
@@ -2369,4 +2323,47 @@ void mainLoop(Window *win)
             }
         }
     }
+}
+
+
+void freeWidget(Widget *widget)
+{
+    switch (widget->type)
+    {
+    case IMAGE:
+        free(widget->context.image);
+        break;
+    case TEXT_AREA:
+        free(widget->context.textArea);
+        break;
+    default:
+        free(widget->context.fileList);
+        break;
+    }
+}
+
+void UI_destroyWindow(Window *win)
+{
+    free(win->window_buf);
+    int i;
+    for (i = 0; i < win->widget_number; i++)
+    {
+        if (win->widgets[i].type == FILE_LIST)
+        {
+            Icon *p;
+            Icon *temp;
+            for (p = win->widgets[i].context.fileList->file_list; p; p = temp)
+            {
+                temp = p->next;
+                free(p);
+            }
+            int j;
+            for (j = 0; j < FILE_TYPE_NUM; j++)
+            {
+                free(win->widgets[i].context.fileList->image[j]);
+            }
+        }
+        freeWidget(&win->widgets[i]);
+    }
+    destroywindow(win->handler);
 }
