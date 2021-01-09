@@ -8,7 +8,8 @@
 #include "character.h"
 #include "fs.h"
 #include "cmd.h"
-// #include "kbd.h"
+
+
 #define KEY_HOME 0xE0
 #define KEY_END 0xE1
 #define KEY_UP 0xE2
@@ -29,7 +30,265 @@ void drawFileListWidget(Window *win, int index);
 
 void fileListDoubleClickHandler(Window *win, int index, Message *msg);
 void textAreaKeyDownHandler(Window *win, int index, Message *msg);
-void generateHighlightRGB(Widget *w);
+
+
+int min(int a, int b)
+{
+    return a < b ? a : b;
+}
+
+int max(int a, int b)
+{
+    return a > b ? a : b;
+}
+
+void generateHighlightRGB(Widget *w)
+{
+    struct RGBA brown = {87, 144, 111, 255};
+    struct RGBA green = {185, 198, 190, 255};
+    struct RGBA blue = {175, 147, 113, 255};
+    struct RGBA pink = {184, 138, 185, 255};
+    struct RGBA orange = {141, 149, 186, 255};
+    char *text = w->context.textArea->text;
+    int len = strlen(text);
+    RGBA *colors = w->context.textArea->colors;
+    for (int i = 0; i < len; i++)
+    {
+        colors[i] = w->context.textArea->color;
+    }
+
+    for (int i = 0; i < len && text[i]; i++)
+    {
+        // printf(1, "\e[1;30m%d%d%d\e[0;32m| \e[0m", (i + 1) / 100, (i + 1) % 100 / 10, (i + 1) % 10);
+        // find next \n
+        if (text[i] == '\n')
+        {
+            continue;
+        }
+
+        int newlineIndex = len;
+        for (int j = i; j < len; j++)
+        {
+            if (text[j] == '\n')
+            {
+                newlineIndex = j;
+                break;
+            }
+        }
+
+        // annotation
+        if (text[i] == '/' && text[i + 1] == '/')
+        {
+            for (int j = i; j < newlineIndex; j++)
+            {
+                colors[j] = brown;
+                i++;
+            }
+            continue;
+        }
+
+        while (i < newlineIndex)
+        {
+            // numbers
+            if (text[i] >= '0' && text[i] <= '9')
+            {
+                colors[i] = green;
+                i += 1;
+            }
+
+            // string
+            // TODO: fix possible segement fault
+            else if (text[i] == '"')
+            {
+                int start = i;
+                int end = i + 1;
+                for (; text[end] != '"' && text[end] != '\0'; end++)
+                    ;
+                printf(1, "Start: %d End: %d", start, end);
+                for (int i = start; i <= end; i++)
+                {
+                    colors[i] = orange;
+                }
+                i = end + 1;
+            }
+
+            // single char
+            else if (text[i] == '\'')
+            {
+                if (i + 1 < len)
+                    colors[i + 1] = orange;
+                if (i + 2 < len)
+                    colors[i + 2] = orange;
+                i += 3;
+            }
+
+            // int
+            else if ((len - i) >= 3 && text[i] == 'i' && text[i + 1] == 'n' && text[i + 2] == 't')
+            {
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                i += 3;
+            }
+
+            // long
+            else if ((len - i) >= 4 && text[i] == 'l' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 'g')
+            {
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
+                i += 4;
+            }
+
+            // double
+            else if ((len - i) >= 6 && text[i] == 'd' && text[i + 1] == 'o' && text[i + 2] == 'u' && text[i + 3] == 'b' && text[i + 4] == 'l' && text[i + 5] == 'e')
+            {
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
+                colors[i + 4] = blue;
+                colors[i + 5] = blue;
+                i += 6;
+            }
+
+            // float
+            else if ((len - i) >= 5 && text[i] == 'f' && text[i + 1] == 'l' && text[i + 2] == 'o' && text[i + 3] == 'a' && text[i + 4] == 't')
+            {
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
+                colors[i + 4] = blue;
+                i += 5;
+            }
+
+            // char
+            else if ((len - i) >= 4 && text[i] == 'c' && text[i + 1] == 'h' && text[i + 2] == 'a' && text[i + 3] == 'r')
+            {
+                colors[i] = blue;
+                colors[i + 1] = blue;
+                colors[i + 2] = blue;
+                colors[i + 3] = blue;
+                i += 4;
+            }
+
+            // if
+            else if ((len - i) >= 2 && text[i] == 'i' && text[i + 1] == 'f')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                i += 2;
+            }
+
+            // else
+            else if ((len - i) >= 4 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                i += 4;
+            }
+
+            // else if
+            else if ((len - i) >= 7 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e' && text[i + 4] == ' ' && text[i + 5] == 'i' && text[i + 6] == 'f')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
+                colors[i + 6] = pink;
+                i += 7;
+            }
+
+            // for
+            else if ((len - i) >= 3 && text[i] == 'f' && text[i + 1] == 'o' && text[i + 2] == 'r')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                i += 3;
+            }
+
+            // while
+            else if ((len - i) >= 5 && text[i] == 'w' && text[i + 1] == 'h' && text[i + 2] == 'i' && text[i + 3] == 'l' && text[i + 4] == 'e')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                i += 5;
+            }
+
+            // static
+            else if ((len - i) >= 6 && text[i] == 's' && text[i + 1] == 't' && text[i + 2] == 'a' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'c')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
+                i += 6;
+            }
+
+            // const
+            else if ((len - i) >= 5 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 's' && text[i + 4] == 't')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                i += 5;
+            }
+
+            else if ((len - i) >= 8 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'n' && text[i + 6] == 'u' && text[i + 7] == 'e')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
+                colors[i + 6] = pink;
+                colors[i + 7] = pink;
+                i += 8;
+            }
+            else if ((len - i) >= 6 && text[i] == 'r' && text[i + 1] == 'e' && text[i + 2] == 't' && text[i + 3] == 'u' && text[i + 4] == 'r' && text[i + 5] == 'n')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                colors[i + 5] = pink;
+                i += 6;
+            }
+
+            else if ((len - i) >= 5 && text[i] == 'b' && text[i + 1] == 'r' && text[i + 2] == 'e' && text[i + 3] == 'a' && text[i + 4] == 'k')
+            {
+                colors[i] = pink;
+                colors[i + 1] = pink;
+                colors[i + 2] = pink;
+                colors[i + 3] = pink;
+                colors[i + 4] = pink;
+                i += 5;
+            }
+
+            else
+            {
+                i += 1;
+            }
+        }
+    }
+}
+
 
 void push_command(struct CommandStack *command_stack, enum CommandType type, int index, char *content, char *old_content, int isBatch)
 {
@@ -984,263 +1243,6 @@ void UI_suffix(char *t, char *s)
         s--;
     s++;
     strcpy(t, s);
-}
-
-int min(int a, int b)
-{
-    return a < b ? a : b;
-}
-
-int max(int a, int b)
-{
-    return a > b ? a : b;
-}
-
-void generateHighlightRGB(Widget *w)
-{
-    struct RGBA brown = {87, 144, 111, 255};
-    struct RGBA green = {185, 198, 190, 255};
-    struct RGBA blue = {175, 147, 113, 255};
-    struct RGBA pink = {184, 138, 185, 255};
-    struct RGBA orange = {141, 149, 186, 255};
-    char *text = w->context.textArea->text;
-    int len = strlen(text);
-    RGBA *colors = w->context.textArea->colors;
-    for (int i = 0; i < len; i++)
-    {
-        colors[i] = w->context.textArea->color;
-    }
-
-    for (int i = 0; i < len && text[i]; i++)
-    {
-        // printf(1, "\e[1;30m%d%d%d\e[0;32m| \e[0m", (i + 1) / 100, (i + 1) % 100 / 10, (i + 1) % 10);
-        // find next \n
-        if (text[i] == '\n')
-        {
-            continue;
-        }
-
-        int newlineIndex = len;
-        for (int j = i; j < len; j++)
-        {
-            if (text[j] == '\n')
-            {
-                newlineIndex = j;
-                break;
-            }
-        }
-
-        // annotation
-        if (text[i] == '/' && text[i + 1] == '/')
-        {
-            for (int j = i; j < newlineIndex; j++)
-            {
-                colors[j] = brown;
-                i++;
-            }
-            continue;
-        }
-
-        while (i < newlineIndex)
-        {
-            // numbers
-            if (text[i] >= '0' && text[i] <= '9')
-            {
-                colors[i] = green;
-                i += 1;
-            }
-
-            // string
-            // TODO: fix possible segement fault
-            else if (text[i] == '"')
-            {
-                int start = i;
-                int end = i + 1;
-                for (; text[end] != '"' && text[end] != '\0'; end++)
-                    ;
-                printf(1, "Start: %d End: %d", start, end);
-                for (int i = start; i <= end; i++)
-                {
-                    colors[i] = orange;
-                }
-                i = end + 1;
-            }
-
-            // single char
-            else if (text[i] == '\'')
-            {
-                if (i + 1 < len)
-                    colors[i + 1] = orange;
-                if (i + 2 < len)
-                    colors[i + 2] = orange;
-                i += 3;
-            }
-
-            // int
-            else if ((len - i) >= 3 && text[i] == 'i' && text[i + 1] == 'n' && text[i + 2] == 't')
-            {
-                colors[i] = blue;
-                colors[i + 1] = blue;
-                colors[i + 2] = blue;
-                i += 3;
-            }
-
-            // long
-            else if ((len - i) >= 4 && text[i] == 'l' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 'g')
-            {
-                colors[i] = blue;
-                colors[i + 1] = blue;
-                colors[i + 2] = blue;
-                colors[i + 3] = blue;
-                i += 4;
-            }
-
-            // double
-            else if ((len - i) >= 6 && text[i] == 'd' && text[i + 1] == 'o' && text[i + 2] == 'u' && text[i + 3] == 'b' && text[i + 4] == 'l' && text[i + 5] == 'e')
-            {
-                colors[i] = blue;
-                colors[i + 1] = blue;
-                colors[i + 2] = blue;
-                colors[i + 3] = blue;
-                colors[i + 4] = blue;
-                colors[i + 5] = blue;
-                i += 6;
-            }
-
-            // float
-            else if ((len - i) >= 5 && text[i] == 'f' && text[i + 1] == 'l' && text[i + 2] == 'o' && text[i + 3] == 'a' && text[i + 4] == 't')
-            {
-                colors[i] = blue;
-                colors[i + 1] = blue;
-                colors[i + 2] = blue;
-                colors[i + 3] = blue;
-                colors[i + 4] = blue;
-                i += 5;
-            }
-
-            // char
-            else if ((len - i) >= 4 && text[i] == 'c' && text[i + 1] == 'h' && text[i + 2] == 'a' && text[i + 3] == 'r')
-            {
-                colors[i] = blue;
-                colors[i + 1] = blue;
-                colors[i + 2] = blue;
-                colors[i + 3] = blue;
-                i += 4;
-            }
-
-            // if
-            else if ((len - i) >= 2 && text[i] == 'i' && text[i + 1] == 'f')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                i += 2;
-            }
-
-            // else
-            else if ((len - i) >= 4 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                i += 4;
-            }
-
-            // else if
-            else if ((len - i) >= 7 && text[i] == 'e' && text[i + 1] == 'l' && text[i + 2] == 's' && text[i + 3] == 'e' && text[i + 4] == ' ' && text[i + 5] == 'i' && text[i + 6] == 'f')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                colors[i + 5] = pink;
-                colors[i + 6] = pink;
-                i += 7;
-            }
-
-            // for
-            else if ((len - i) >= 3 && text[i] == 'f' && text[i + 1] == 'o' && text[i + 2] == 'r')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                i += 3;
-            }
-
-            // while
-            else if ((len - i) >= 5 && text[i] == 'w' && text[i + 1] == 'h' && text[i + 2] == 'i' && text[i + 3] == 'l' && text[i + 4] == 'e')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                i += 5;
-            }
-
-            // static
-            else if ((len - i) >= 6 && text[i] == 's' && text[i + 1] == 't' && text[i + 2] == 'a' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'c')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                colors[i + 5] = pink;
-                i += 6;
-            }
-
-            // const
-            else if ((len - i) >= 5 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 's' && text[i + 4] == 't')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                i += 5;
-            }
-
-            else if ((len - i) >= 8 && text[i] == 'c' && text[i + 1] == 'o' && text[i + 2] == 'n' && text[i + 3] == 't' && text[i + 4] == 'i' && text[i + 5] == 'n' && text[i + 6] == 'u' && text[i + 7] == 'e')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                colors[i + 5] = pink;
-                colors[i + 6] = pink;
-                colors[i + 7] = pink;
-                i += 8;
-            }
-            else if ((len - i) >= 6 && text[i] == 'r' && text[i + 1] == 'e' && text[i + 2] == 't' && text[i + 3] == 'u' && text[i + 4] == 'r' && text[i + 5] == 'n')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                colors[i + 5] = pink;
-                i += 6;
-            }
-
-            else if ((len - i) >= 5 && text[i] == 'b' && text[i + 1] == 'r' && text[i + 2] == 'e' && text[i + 3] == 'a' && text[i + 4] == 'k')
-            {
-                colors[i] = pink;
-                colors[i + 1] = pink;
-                colors[i + 2] = pink;
-                colors[i + 3] = pink;
-                colors[i + 4] = pink;
-                i += 5;
-            }
-
-            else
-            {
-                i += 1;
-            }
-        }
-    }
 }
 
 // Attention
