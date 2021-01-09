@@ -1,4 +1,14 @@
 ## Editor
+
+### Setup
+```bash
+# ubuntu 20.04
+sudo apt install qemu
+sudo apt install qemu-system-i386
+make
+make qemu
+```
+
 ### TODO
 - [x] cursor
 - [x] Up Down Left Right
