@@ -1,0 +1,17 @@
+digraph G {
+    splines="FALSE"
+    rankdir=LR
+
+    /* Entities */
+    A [label="鼠标驱动"]
+    B [label="键盘驱动"]
+    C [label="消息队列"]
+    D [label="程序"]
+    E [label="GUI绘制引擎"]
+
+    /* Relationships */
+    A -> C[label="中断"]
+    B -> C[label="中断"]
+    C -> D[label="分发处理"]
+    D -> E[label="调用"]
+}
