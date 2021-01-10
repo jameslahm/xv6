@@ -24,11 +24,7 @@ char shift_ascii_map[128] =
     {
         [0x30] 0x29, [0x31] 0x21, [0x32] 0x40, [0x33] 0x23, [0x34] 0x24, [0x35] 0x25, [0x36] 0x5E, [0x37] 0x26, [0x38] 0x2A, [0x39] 0x28, [0x2D] 0x5F, [0x3D] 0x2B, [0x5B] 0x7B, [0x5D] 0x7D, [0x5C] 0x7C, [0x3B] 0x3A, [0x27] 0x22, [0x2F] 0x3F, [0x2C] 0x3C, [0x2E] 0x3E, [0x60] 0x7E};
 
-void fileListDoubleClickHandler(Window *win, int index, Message *msg);
-void textAreaKeyDownHandler(Window *win, int index, Message *msg);
-void drawImageWidget(Window *win, int index);
-void drawTextAreaWidget(Window *win, int index);
-void drawFileListWidget(Window *win, int index);
+
 
 
 int min(int a, int b)
@@ -288,24 +284,24 @@ void generateHighlightRGB(Widget *w)
     }
 }
 
-void drawPointAlpha(RGB *color, RGBA origin)
+void drawPointAlpha(RGB *color, RGBA o)
 {
     float alpha;
-    if (origin.A == 255)
+    if (o.A == 255)
     {
-        color->R = origin.R;
-        color->G = origin.G;
-        color->B = origin.B;
+        color->R = o.R;
+        color->G = o.G;
+        color->B = o.B;
         return;
     }
-    if (origin.A == 0)
+    if (o.A == 0)
     {
         return;
     }
-    alpha = (float)origin.A / 255;
-    color->R = color->R * (1 - alpha) + origin.R * alpha;
-    color->G = color->G * (1 - alpha) + origin.G * alpha;
-    color->B = color->B * (1 - alpha) + origin.B * alpha;
+    alpha = (float)o.A / 255;
+    color->R = color->R * (1 - alpha) + o.R * alpha;
+    color->G = color->G * (1 - alpha) + o.G * alpha;
+    color->B = color->B * (1 - alpha) + o.B * alpha;
 }
 
 int drawCharacterWithBg(Window *win, int x, int y, char ch, RGBA color, RGBA bg)
@@ -522,7 +518,7 @@ void drawImage(Window *win, RGBA *img, int x, int y, int width, int height)
     }
 }
 
-void draw24Image(Window *win, RGB *img, int x, int y, int width, int height)
+void drawImage24(Window *win, RGB *img, int x, int y, int width, int height)
 {
     int i;
     RGB *t;
@@ -611,7 +607,7 @@ void drawFillRect(Window *win, RGBA color, int x, int y, int width, int height)
     }
 }
 
-void draw24FillRect(Window *win, RGB color, int x, int y, int width, int height)
+void drawFillRect24(Window *win, RGB color, int x, int y, int width, int height)
 {
     if (x >= win->width || x + width < 0 || y >= win->height || y + height < 0 || x < 0 || y < 0 || width < 0 || height < 0)
     {
@@ -917,7 +913,7 @@ int addFileListWidget(Window *win, char *path, int direction, int x, int y, int 
 void drawImageWidget(Window *win, int index)
 {
     Widget *w = &(win->widgets[index]);
-    draw24Image(win, w->context.image->image, w->size.x, w->size.y, w->size.width, w->size.height);
+    drawImage24(win, w->context.image->image, w->size.x, w->size.y, w->size.width, w->size.height);
 }
 
 void drawTextAreaWidget(Window *win, int index)
@@ -928,7 +924,7 @@ void drawTextAreaWidget(Window *win, int index)
     white.R = 255;
     white.G = 255;
     white.B = 255;
-    draw24FillRect(win, white, w->size.x, w->size.y, w->size.width, w->size.height);
+    drawFillRect24(win, white, w->size.x, w->size.y, w->size.width, w->size.height);
 
     // for select
     RGBA gray;

@@ -11,6 +11,13 @@
 #include "icon.h"
 #include "wm.h"
 
+#define MOUSE_SPEED_X 0.6f
+#define MOUSE_SPEED_Y -0.6f;
+
+#define xsize 810
+#define ysize 610
+#define rsize 110
+
 int min(int x, int y) { return x < y ? x : y; }
 int max(int x, int y) { return x > y ? x : y; }
 int clamp(int x, int l, int r) { return min(r, max(l, x)); }
@@ -28,7 +35,6 @@ void createRectBySize(WinRect *rect, int xmin, int ymin, int width, int height)
 	rect->ymax = ymin + height;
 }
 
-//return non-zero if buf is full
 int enqueue(MsgBuf *buf, Message *msg)
 {
 	if (buf->cnt >= MSG_BUF_SIZE)
@@ -40,7 +46,6 @@ int enqueue(MsgBuf *buf, Message *msg)
 	return 0;
 }
 
-//return non-zero if buf is empty
 int dequeue(MsgBuf *buf, Message *result)
 {
 	if (buf->cnt == 0)
@@ -59,7 +64,6 @@ void initqueue(MsgBuf *buf)
 
 #define MAX_WINDOW_CNT 50
 
-//linked-list of windows
 static struct
 {
 	struct proc *proc;
@@ -134,8 +138,6 @@ void getWindowRect(int handler, WinRect *res)
 	res->ymax = wnd->contents.ymax + 3;
 }
 
-// draw close icon
-
 void drawWindowBar(struct RGB *dst, Window *wnd, struct RGBA barcolor)
 {
 	struct RGBA closecolor, txtcolor;
@@ -177,7 +179,7 @@ void drawWindow(int layer, int handler, int refresh)
 		drawWindowBar(dst, wnd, barcolor);
 
 	switchuvm(windowlist[handler].proc);
-	draw24ImagePart(dst, wnd->content_buf, wnd->contents.xmin, wnd->contents.ymin,
+	drawImage24Part(dst, wnd->content_buf, wnd->contents.xmin, wnd->contents.ymin,
 					wnd->contents.xmax - wnd->contents.xmin, wnd->contents.ymax - wnd->contents.ymin,
 					0, 0, wnd->contents.xmax - wnd->contents.xmin, wnd->contents.ymax - wnd->contents.ymin);
 	if (proc == 0)
@@ -192,8 +194,6 @@ void drawWindow(int layer, int handler, int refresh)
 		if (layer >= 1)
 			clearRectByCoord(screen, screen_buf1, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3);
 	}
-
-	//TODO fire REDRAW Message to application
 }
 
 void refreshWindowScreen(int layer, int handler)
@@ -219,7 +219,6 @@ void focusWindow(int handler)
 		removeFromList(&windowlisthead, handler);
 		addToListHead(&windowlisthead, handler);
 
-		//redraw all occluded window
 		int p, q;
 		for (p = windowlisthead; p != -1; p = windowlist[p].next)
 			q = p;
@@ -257,7 +256,6 @@ void focusWindow(int handler)
 	focus = handler;
 }
 
-//return Window handler on succuss, -1 if unsuccessful
 int createWindow(int width, int height, const char *title, struct RGB *buf, int alwaysfront)
 {
 	if (emptyhead == -1)
@@ -275,9 +273,6 @@ int createWindow(int width, int height, const char *title, struct RGB *buf, int 
 	addToListHead(&windowlisthead, idx);
 
 	initqueue(&windowlist[idx].wnd.buf);
-	//initial Window position according to idx
-	// int offsetX = (100 + idx * 47) % (SCREEN_WIDTH - 130) + 30;
-	// int offsetY = (100 + idx * 33) % (SCREEN_HEIGHT - 130) + 30;
 	int offsetX = 10;
 	int offsetY = 20;
 	if (len == 0 && desktopHandler == -100)
@@ -292,11 +287,10 @@ int createWindow(int width, int height, const char *title, struct RGB *buf, int 
 		createRectBySize(&windowlist[idx].wnd.titlebar, offsetX - 3, offsetY - 20, width + 6, 20);
 		memmove(windowlist[idx].wnd.title, title, len);
 	}
-	windowlist[idx].proc = proc; // remember current process
+	windowlist[idx].proc = proc;
 	windowlist[idx].wnd.alwaysfront = alwaysfront;
 	windowlist[idx].wnd.content_buf = buf;
 
-	//drawing is completed in focusWindow EXCEPT when there was an always-front window
 	focusWindow(idx);
 	if (frontcnt)
 	{
@@ -312,19 +306,12 @@ int createWindow(int width, int height, const char *title, struct RGB *buf, int 
 	return idx;
 }
 
-int createDesktopWindow()
-{
-	//TODO create full-screen Window without titlebar
-	return 0;
-}
-
 void destroyWindow(int handler)
 {
 	acquire(&wmlock);
 
 	if (handler != focus)
 		focusWindow(handler);
-	//clear Window on screen
 	Window *wnd = &windowlist[handler].wnd;
 	clearRectByCoord(screen_buf1, screen_buf2, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3);
 	clearRectByCoord(screen, screen_buf1, wnd->titlebar.xmin, wnd->titlebar.ymin, wnd->titlebar.xmax, wnd->contents.ymax + 3);
@@ -333,7 +320,6 @@ void destroyWindow(int handler)
 	if (wnd->alwaysfront)
 		--frontcnt;
 
-	//choose next Window to focus
 	int newfocus = windowlist[handler].next;
 	removeFromList(&windowlisthead, handler);
 	addToListHead(&emptyhead, handler);
@@ -343,9 +329,6 @@ void destroyWindow(int handler)
 
 	release(&wmlock);
 }
-
-#define MOUSE_SPEED_X 0.6f
-#define MOUSE_SPEED_Y -0.6f;
 
 void dispatchMessage(int handler, Message *msg)
 {
@@ -400,17 +383,14 @@ void wmHandleMessage(Message *msg)
 			wm_mouse_pos.x = 0;
 		if (wm_mouse_pos.y < 0)
 			wm_mouse_pos.y = 0;
-		//redraw mouse cursor
 		clearMouse(screen, screen_buf1, wm_last_mouse_pos.x, wm_last_mouse_pos.y);
 		drawMouse(screen, 0, wm_mouse_pos.x, wm_mouse_pos.y);
-		//drag
 		if (clickedOnTitle)
 		{
 			wmMoveFocusWindow(wm_mouse_pos.x - wm_last_mouse_pos.x, wm_mouse_pos.y - wm_last_mouse_pos.y);
 		}
 		break;
 	case M_MOUSE_DOWN:
-		//handle focus changes
 		if (frontcnt == 0)
 		{
 			for (p = windowlisthead; p != -1; p = windowlist[p].next)
@@ -428,7 +408,6 @@ void wmHandleMessage(Message *msg)
 		{
 			clickedOnContent = 1;
 			newmsg = *msg;
-			//coordinate transformation (from screen to window)
 			newmsg.params[0] = wm_mouse_pos.x - windowlist[focus].wnd.contents.xmin;
 			newmsg.params[1] = wm_mouse_pos.y - windowlist[focus].wnd.contents.ymin;
 			newmsg.params[2] = msg->params[0];
@@ -439,7 +418,7 @@ void wmHandleMessage(Message *msg)
 			newmsg.msg_type = WM_WINDOW_CLOSE;
 			dispatchMessage(focus, &newmsg);
 		}
-		else // titlebar
+		else
 		{
 			clickedOnTitle = 1;
 		}
@@ -530,7 +509,7 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
 		int wndwidth = wnd->contents.xmax - wnd->contents.xmin;
 		int wndheight = wnd->contents.ymax - wnd->contents.ymin;
 		switchuvm(windowlist[handler].proc);
-		draw24ImagePart(screen_buf1, windowlist[handler].wnd.content_buf,
+		drawImage24Part(screen_buf1, windowlist[handler].wnd.content_buf,
 						updrect.xmin, updrect.ymin, wndwidth, wndheight,
 						max(xmin, 0), max(ymin, 0), updrect.xmax - updrect.xmin, updrect.ymax - updrect.ymin);
 		clearRectByCoord(screen, screen_buf1, updrect.xmin, updrect.ymin, updrect.xmax, updrect.ymax);
@@ -560,12 +539,7 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
 		rectcnt++;
 	}
 
-#define xsize 810
-#define ysize 610
-#define rsize 110
-	//const int xsize = 800 + 10, ysize = 600 + 10;
 	static int xcount[xsize], ycount[ysize];
-	//static int rsize = MAX_WINDOW_CNT * 2 + 10;
 	static int xrev[rsize], yrev[rsize];
 	for (i = 0; i < xsize; ++i)
 		xcount[i] = 0;
@@ -633,14 +607,14 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
 			switchuvm(windowlist[handler].proc);
 			if (subrects[i][j] <= 0)
 			{
-				draw24ImagePart(screen_buf2, wnd->content_buf, xrev[i], yrev[j], wndwidth, wndheight,
+				drawImage24Part(screen_buf2, wnd->content_buf, xrev[i], yrev[j], wndwidth, wndheight,
 								xrev[i] - wnd->contents.xmin, yrev[j] - wnd->contents.ymin, xrev[i + 1] - xrev[i], yrev[j + 1] - yrev[j]);
 				clearRectByCoord(screen_buf1, screen_buf2, xrev[i], yrev[j], xrev[i + 1], yrev[j + 1]);
 				clearRectByCoord(screen, screen_buf1, xrev[i], yrev[j], xrev[i + 1], yrev[j + 1]);
 			}
 			else if (subrects[i][j] == 1 && hasIntersection(&rects[0], &cursubrect))
 			{
-				draw24ImagePart(screen_buf2, wnd->content_buf, xrev[i], yrev[j], wndwidth, wndheight,
+				drawImage24Part(screen_buf2, wnd->content_buf, xrev[i], yrev[j], wndwidth, wndheight,
 								xrev[i] - wnd->contents.xmin, yrev[j] - wnd->contents.ymin, xrev[i + 1] - xrev[i], yrev[j + 1] - yrev[j]);
 			}
 			if (proc == 0)
@@ -658,14 +632,12 @@ void wmUpdateWindow(int handler, int xmin, int ymin, int width, int height)
 	release(&wmlock);
 }
 
-//return number of Message (0 if buf is empty, 1 if not)
 int wmGetMessage(int handler, Message *res)
 {
 	if (handler < 0 || handler >= MAX_WINDOW_CNT)
 	{
 		return 0;
 	}
-	// TODO: I'm not sure... Maybe 'proc' means porcess which is running; so this if can verify the handler.
 	if (proc != windowlist[handler].proc)
 	{
 		return 0;
@@ -722,7 +694,7 @@ int sys_updatewindow()
 	return 0;
 }
 
-int sys_draw24Image()
+int sys_drawImage24()
 {
 	int handler;
 	int i;
@@ -741,7 +713,7 @@ int sys_draw24Image()
 		return 1;
 	}
 	Window *wnd = &windowlist[handler].wnd;
-	draw24Image(screen_buf1, image, x + wnd->contents.xmin, y + wnd->contents.ymin,
+	drawImage24(screen_buf1, image, x + wnd->contents.xmin, y + wnd->contents.ymin,
 				width, height, wnd->contents.xmax, wnd->contents.ymax);
 	return 0;
 }

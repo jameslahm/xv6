@@ -197,7 +197,7 @@ void drawImage(RGB *buf, RGBA *img, int x, int y, int width, int height, int max
     releaseGUILock(buf);
 }
 
-void draw24Image(RGB *buf, RGB *img, int x, int y, int width, int height, int max_x, int max_y)
+void drawImage24(RGB *buf, RGB *img, int x, int y, int width, int height, int max_x, int max_y)
 {
     int i;
     RGB *t;
@@ -221,7 +221,7 @@ void draw24Image(RGB *buf, RGB *img, int x, int y, int width, int height, int ma
     releaseGUILock(buf);
 }
 
-void draw24ImagePart(RGB *buf, RGB *img, int x, int y, int width, int height, int subx, int suby, int subw, int subh)
+void drawImage24Part(RGB *buf, RGB *img, int x, int y, int width, int height, int subx, int suby, int subw, int subh)
 {
     if (x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT)
         return;

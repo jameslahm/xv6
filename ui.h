@@ -10,8 +10,8 @@
 
 struct Message;
 struct Window;
+typedef void (*Painter)(struct Window *win, int index);
 typedef void (*Handler)(struct Window *win, int index, Message *msg);
-typedef void (*painter)(struct Window *win, int index);
 
 #define IMAGE 0
 #define TEXT_AREA 1
@@ -141,9 +141,9 @@ typedef union WidgetBase
 typedef struct Widget
 {
     int type;
-    WidgetSize size;
-    painter paint;
+    Painter paint;
     WidgetBase context;
+    WidgetSize size;
 } Widget;
 
 typedef struct Window
@@ -155,5 +155,11 @@ typedef struct Window
     RGB *window_buf;
     Widget widgets[MAX_WIDGET];
 } Window;
+
+void fileListDoubleClickHandler(Window *win, int index, Message *msg);
+void textAreaKeyDownHandler(Window *win, int index, Message *msg);
+void drawImageWidget(Window *win, int index);
+void drawTextAreaWidget(Window *win, int index);
+void drawFileListWidget(Window *win, int index);
 
 #endif
