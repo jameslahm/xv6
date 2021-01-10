@@ -7,16 +7,56 @@ sudo apt install qemu-system-i386
 
 
 
-## 运行
+## 命令式文本编辑器
+
+### 运行
 
 ```bash
+git checkout master
+make
+make qemu-nox
+editor [filename]
+```
+
+
+
+### 命令支持
+
+|  Command   |       Action       |
+| :--------: | :----------------: |
+|   ins-n    |  在第n行插入一行   |
+|    ins     |   在最后一行插入   |
+|   mod-n    |     修改第n行      |
+|    mod     |    修改最后一行    |
+|   del-n    |     删除第n行      |
+|    del     |    删除最后一行    |
+|    show    | 启用修改后自动显示 |
+|    hide    | 禁用修改后自动显示 |
+| highlight  |    启动自动高亮    |
+| nhighlight |    禁用自动高亮    |
+|    save    |      保存文件      |
+|    exit    |     退出编辑器     |
+|    help    |    显示帮助信息    |
+|  rollback  |      回滚文件      |
+|   print    |    打印文件内容    |
+
+
+
+## GUI文本编辑器
+
+### 运行
+
+> 在屏幕上双击Editor应用程序或者文本文件进行编辑
+
+```bash
+git checkout master
 make
 make qemu
 ```
 
 
 
-## 功能支持
+### 功能支持
 - [x] 光标及鼠标使用
 - [x] 使用上下左右键切换光标位置
 - [x] 使用Home，End键回到行首行尾
