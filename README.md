@@ -1,4 +1,4 @@
-## XV6 Editor
+## XV6 Text Editor
 
 ### Command List
 |   Command     |   Action                          |
@@ -19,8 +19,11 @@
 |   rollback    |   rollback the file               |
 |   print       |   print all content               |
 
-## TODO
-- [x] support rollback
-- [x] support undo redo
-- [ ] prompt user if save when exit
-- [ ] search text
+## XV6 Graphic Editor
+
+- Highlight
+- Search And Replace
+- Undo and Redo
+- Integrated Terminal
+- Save and New
+- Select
